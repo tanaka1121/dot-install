@@ -12,9 +12,35 @@
     h1 {
       font-size: 24px;
     }
+    input[type="text"]{
+      padding: 7px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      width: 100px;
+      font-weight: bold;
+      font-size: 18px;
+      text-align: right;
+    }
+    #btn{
+      margin: 30px auto;
+      width: 180px;
+      border-radius: 5px;
+      box-shadow: 0 4px 0 #e91b0c;
+      background: #f44336;
+      color: #fff;
+      cursor: pointer;
+      padding: 7px;
+    }
+    #btn:hover{
+      opacity: 0.8;
+    }
   </style>
 </head>
 <body>
   <h1>Split the bill to computer</h1>
+  <p>Total<input type="text" id ="price" value="0"></p>
+  <p>People<input type="text" id ="num" value="0"></p>
+  <div id="btn">Calculation</div>
+  <p id="result"></p>
 </body>
 </html>
