@@ -42,5 +42,25 @@
   <p>People<input type="text" id ="num" value="0"></p>
   <div id="btn">Calculation</div>
   <p id="result"></p>
+  <script>
+  (function(){
+    'use strict';
+
+    var priceForm = document.getElementById('price');
+    var numForm = document.getElementById('num');
+    var btn = document.getElementById('btn');
+    var result = document.getElementById('result');
+
+    priceForm.addEventListener('click',function(){
+      this.select();
+    });
+    numForm.addEventListener('click',function(){
+      this.select();
+    });
+
+  })();
+
+
+  </script>
 </body>
 </html>
