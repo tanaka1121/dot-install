@@ -38,8 +38,8 @@
 </head>
 <body>
   <h1>Split the bill to computer</h1>
-  <p>Total<input type="text" id ="price" value="0"></p>
-  <p>People<input type="text" id ="num" value="0"></p>
+  <p>Total bill <input type="text" id ="price" value="0"></p>
+  <p>People <input type="text" id ="num" value="0"></p>
   <div id="btn">Calculation</div>
   <p id="result"></p>
   <script>
@@ -56,6 +56,32 @@
     });
     numForm.addEventListener('click',function(){
       this.select();
+    });
+    btn.addEventListener('click',function(){
+      var price = priceForm.value;
+      var num = numForm.value;
+      var x1, x2,y1,y2;
+      var unit = 100;
+
+      if(price.match(/^[1-9][0-9]*$/)&& num.match(/^[1-9][0-9]*$/)){
+        //ok
+        //result.innerHTML = 'OK!';
+        if (price % num ===  0) {
+          result.innerHTML = 'Just one parson ' + (price / num ) + ' yen.';
+        }else {
+          //result.innerHTML = 'something' ;
+          x1 = Math.floor(price / num / unit) * unit;
+          y1 = price - (x1 * num);
+          x2 = Math.ceil(price / num / unit) * unit;
+          y2 = Math.abs(price - (x2 * num));
+          result.innerHTML =
+          'If it is one person ' + x1 + ' yen not enough ' + y1 + ' yen.<br>' + 'If it is one person ' + x2 + ' yen too much ' + y2 + ' yen. '
+        }
+
+      }else{
+        //error
+        result.innerHTML = 'There is an error in the input value .';
+      }
     });
 
   })();
