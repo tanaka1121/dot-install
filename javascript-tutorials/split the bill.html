@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <title>Split the bill to computer</title>
+  <title>Split the bill to computer</title>
   <style>
     body {
       font-size: 16px;
@@ -12,7 +12,7 @@
     h1 {
       font-size: 24px;
     }
-    input[type="text"]{
+    input[type="text"] {
       padding: 7px;
       border: 1px solid #ddd;
       border-radius: 3px;
@@ -21,7 +21,7 @@
       font-size: 18px;
       text-align: right;
     }
-    #btn{
+    #btn {
       margin: 30px auto;
       width: 180px;
       border-radius: 5px;
@@ -43,7 +43,7 @@
   <div id="btn">Calculation</div>
   <p id="result"></p>
   <script>
-  (function(){
+  (function() {
     'use strict';
 
     var priceForm = document.getElementById('price');
@@ -51,42 +51,39 @@
     var btn = document.getElementById('btn');
     var result = document.getElementById('result');
 
-    priceForm.addEventListener('click',function(){
+    priceForm.addEventListener('click',function() {
       this.select();
     });
-    numForm.addEventListener('click',function(){
+    numForm.addEventListener('click',function() {
       this.select();
     });
-    btn.addEventListener('click',function(){
+    btn.addEventListener('click',function() {
       var price = priceForm.value;
       var num = numForm.value;
-      var x1, x2,y1,y2;
+      var x1, x2, y1, y2;
       var unit = 100;
 
-      if(price.match(/^[1-9][0-9]*$/)&& num.match(/^[1-9][0-9]*$/)){
+      if (price.match(/^[1-9][0-9]*$/)&& num.match(/^[1-9][0-9]*$/)){
         //ok
         //result.innerHTML = 'OK!';
         if (price % num ===  0) {
           result.innerHTML = 'Just one parson ' + (price / num ) + ' yen.';
-        }else {
+        } else {
           //result.innerHTML = 'something' ;
           x1 = Math.floor(price / num / unit) * unit;
           y1 = price - (x1 * num);
           x2 = Math.ceil(price / num / unit) * unit;
           y2 = Math.abs(price - (x2 * num));
           result.innerHTML =
-          'If it is one person ' + x1 + ' yen not enough ' + y1 + ' yen.<br>' + 'If it is one person ' + x2 + ' yen too much ' + y2 + ' yen. '
+          'If it is one person ' + x1 + ' yen not enough ' + y1 + ' yen.<br>' + 'If it is one person ' + x2 + ' yen too much ' + y2 + ' yen.'
         }
 
-      }else{
+      } else {
         //error
-        result.innerHTML = 'There is an error in the input value .';
+        result.innerHTML = 'There is an error in the input value.';
       }
     });
-
   })();
-
-
   </script>
 </body>
 </html>
