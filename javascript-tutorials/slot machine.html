@@ -41,6 +41,9 @@
     .btn + .btn {
       margin-left: 10px;
     }
+    .btn.inactive{
+      opacity: 0.5;
+    }
     #spinButton {
       margin: 0 auto;
       width: 240px;
@@ -51,6 +54,9 @@
       background: #f44336;
       cursor: pointer;
 
+    }
+    #spinButton.inactive{
+      opacity: 0.5;
     }
     /*
     * ユニバーサルセレクタ
@@ -69,10 +75,30 @@
     <div class="panel" id="panel2">?</div>
   </div>
   <div>
-    <div class="btn" id="btn0">STOP</div>
-    <div class="btn" id="btn1">STOP</div>
-    <div class="btn" id="btn2">STOP</div>
+    <div class="btn inactive" id="btn0">STOP</div>
+    <div class="btn inactive" id="btn1">STOP</div>
+    <div class="btn inactive" id="btn2">STOP</div>
   </div>
   <div id="spinButton">SPIN</div>
+  <script>
+    (function() {
+      'use strict';
+
+      var panel0 = document.getElementById('panel0');
+      var panel1 = document.getElementById('panel1');
+      var panel2 = document.getElementById('panel2');
+      var btn0 = document.getElementById('btn0');
+      var btn1 = document.getElementById('btn1');
+      var btn2 = document.getElementById('btn2');
+      var spinButton = document.getElementById('spinButton');
+
+      spinButton.addEventListener('click', function(){
+        this.className = 'inactive';
+        btn0.className = 'btn';
+        btn1.className = 'btn';
+        btn2.className = 'btn';
+      });
+    })();
+  </script>
 </body>
 </html>
