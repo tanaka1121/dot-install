@@ -84,6 +84,10 @@
     (function() {
       'use strict';
 
+      var panels = ['○','△','☆']
+      var timers = [];
+      var results = [];
+
       var panel0 = document.getElementById('panel0');
       var panel1 = document.getElementById('panel1');
       var panel2 = document.getElementById('panel2');
@@ -97,7 +101,33 @@
         btn0.className = 'btn';
         btn1.className = 'btn';
         btn2.className = 'btn';
+
+        runSlot(0,panel0);
+        runSlot(1,panel1);
+        runSlot(2,panel2);
       });
+
+      function runSlot(n,panel) {
+        panel.innerHTML = panels[Math.floor(Math.random() * panels.length)];
+        timers[n] = setTimeout(function() {
+          runSlot(n,panel)
+        },50);
+      }
+      btn0.addEventListener('click'. function()){
+         stopSlot(0,panel0,this);
+      });
+      btn1.addEventListener('click'. function()){
+         stopSlot(1,panel1,this);
+      });
+      btn2.addEventListener('click'. function()){
+         stopSlot(2,panel2,this);
+      });
+
+      function stopSlot(n,panel, btn) {
+        btn.className = 'btn inactive';
+        clearTimeout(timers{n});
+        results[n] = panel.innerHTML;
+      }
     })();
   </script>
 </body>
