@@ -1,64 +1,63 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset= "utf-8">
+  <meta charset="utf-8">
   <title>SLOT MACHINE</title>
   <style>
     body {
       background: #e0e0e0;
-      font-family: Arial,sans-serif;
+      font-family: Arial, sans-serif;
       text-align: center;
       font-size: 16px;
       margin-top: 30px;
     }
     .panel {
-      display: inline-block;
-      width: 60px;
-      padding: 7px;
-      border-radius: 5px;
-      margin-bottom: 15px;
-      color: #00aaff;
-      font-weight: bold;
-      font-size: 32px;
-      line-height: 64px;
-      background: #fff;
+        display: inline-block;
+        width: 60px;
+        padding: 7px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        color: #00aaff;
+        font-weight: bold;
+        font-size: 32px;
+        line-height: 64px;
+        background: #fff;
     }
     .panel + .panel {
-      margin-left: 10px;
+        margin-left: 10px;
     }
     .panel.unmatched{
-      opacity: 0.5;
+        opacity: 0.5;
     }
     .btn {
-      display: inline-block;
-      width: 60px;
-      padding: 7px;
-      border-radius: 5px;
-      margin-bottom: 15px;
-      color: #fff;
-      box-shadow: 0 4px 0 #0088cc;
-      background: #00aaff;
-      cursor: pointer;
+        display: inline-block;
+        width: 60px;
+        padding: 7px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        color: #fff;
+        box-shadow: 0 4px 0 #0088cc;
+        background: #00aaff;
+        cursor: pointer;
     }
     .btn + .btn {
-      margin-left: 10px;
+        margin-left: 10px;
     }
     .btn.inactive{
-      opacity: 0.5;
+        opacity: 0.5;
     }
     #spinButton {
-      margin: 0 auto;
-      width: 240px;
-      padding: 7px;
-      border-radius: 5px;
-      color: #fff;
-      box-shadow: 0 4px #e91b0c;
-      background: #f44336;
-      cursor: pointer;
-
+        margin: 0 auto;
+        width: 240px;
+        padding: 7px;
+        border-radius: 5px;
+        color: #fff;
+        box-shadow: 0 4px 0 #e91b0c;
+        background: #f44336;
+        cursor: pointer;
     }
     #spinButton.inactive{
-      opacity: 0.5;
+        opacity: 0.5;
     }
     /*
     * ユニバーサルセレクタ
@@ -84,10 +83,11 @@
     (function() {
         'use strict';
 
-        var panels = ['○','△','☆'    ];
+        var panels = ['◯','△','☆'    ];
         var timers = [];
         var results = [];
         var stopCount = 0;
+        var isPlaying = false;
 
         var panel0 = document.getElementById('panel0');
         var panel1 = document.getElementById('panel1');
@@ -98,10 +98,15 @@
         var spinButton = document.getElementById('spinButton');
 
         spinButton.addEventListener('click', function() {
+            if (isPlaying) return;
+            isPlaying = true;
             this.className = 'inactive';
             btn0.className = 'btn';
             btn1.className = 'btn';
             btn2.className = 'btn';
+            panel0.className = 'panel';
+            panel1.className = 'panel';
+            panel2.className = 'panel';
 
             runSlot(0, panel0);
             runSlot(1, panel1);
@@ -111,42 +116,51 @@
         function runSlot(n, panel) {
             panel.innerHTML = panels[Math.floor(Math.random() * panels.length)];
             timers[n] = setTimeout(function() {
-              runSlot(n, panel)
+                runSlot(n, panel)
             }, 50);
         }
 
-        btn0.addEventListener('click'. function() {
-           stopSlot(0, panel0, this);
+        btn0.addEventListener('click',  function() {
+            stopSlot(0, panel0, this);
         });
-        btn1.addEventListener('click'. function() {
-           stopSlot(1,panel1,this);
+        btn1.addEventListener('click',  function() {
+            stopSlot(1, panel1, this);
         });
-        btn2.addEventListener('click'. function() {
-           stopSlot(2,panel2,this);
+        btn2.addEventListener('click', function() {
+            stopSlot(2, panel2, this);
         });
 
-        function stopSlot(n,panel, btn) {
-          btn.className = 'btn inactive';
-          clearTimeout(timers[n]);
-          results[n] = panel.innerHTML;
-          stopCount++;
+        function stopSlot(n, panel, btn) {
+            if (!isPlaying || results[n] !== undefined) return;
+            btn.className = 'btn inactive';
+            clearTimeout(timers[n]);
+            results[n] = panel.innerHTML;
+            stopCount++;
 
-          if(stopCount === 3) {
-            //check
-            checkResults();
+            if (stopCount === 3) {
+                //check
+                checkResults();
+
+                // init
+                isPlaying = false;
+                timers = [];
+                results = [];
+                stopCount = 0;
+                spinButton.className = '';
+              }
           }
-        }
-        function checkResults() {
-           if (results[0] !== results[1] && results[0] !== results[2]) {
-             panel0.className = 'panel unmatched';
-           }
-           if (results[1] !== results[0] && results[1] !== results[2]) {
-             panel1.className = 'panel unmatched';
-           }
-           if (results[2] !==results[1] && results[2] !== results[0]) {
-             panel2.className = 'panel unmatched';
-           }
-        }
+
+          function checkResults() {
+            if (results[0] !== results[1] && results[0] !== results[2]) {
+                panel0.className = 'panel unmatched';
+             }
+             if (results[1] !== results[0] && results[1] !== results[2]) {
+                 panel1.className = 'panel unmatched';
+             }
+             if (results[2] !==results[1] && results[2] !== results[0]) {
+                 panel2.className = 'panel unmatched';
+             }
+          }
 
     })();
   </script>
