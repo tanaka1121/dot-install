@@ -51,6 +51,9 @@
     transform: rotateY(180deg);
 
   }
+  .open{
+    transform: rotateY(180deg);
+  }
   </style>
 </head>
 <body>
@@ -59,5 +62,28 @@
     <div id="card-back">back</div>
   </div>
   <div id="btn">NEXT</div>
+  <script>
+  (function() {
+    'use strict';
+
+    var words = [
+      {'en': 'read', 'ja': '読む'},
+      {'en': 'write', 'ja': '書く'},
+      {'en': 'eat', 'ja': '食べる'},
+      {'en': 'run', 'ja': '走る'},
+      {'en': 'walk', 'ja': '歩く'},
+    ];
+
+    var card = document.getElementById('card');
+    card.addEventListener('click', function() {
+      flip();
+    });
+
+    function flip() {
+      card.className = card.className === ''? 'open' : '';
+    }
+})();
+
+  </script>
 
 </body>
