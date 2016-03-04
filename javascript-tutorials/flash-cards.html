@@ -24,7 +24,7 @@
     opacity: 0.8;
   }
   #card {
-    margin: 60px auto;
+    margin: 60px auto 20px;
     width: 400px;
     height: 100px;
     cursor: pointer;
@@ -58,8 +58,8 @@
 </head>
 <body>
   <div id="card">
-    <div id="card-front">front</div>
-    <div id="card-back">back</div>
+    <div id="card-front"></div>
+    <div id="card-back"></div>
   </div>
   <div id="btn">NEXT</div>
   <script>
@@ -85,6 +85,23 @@
       next();
     });
 
+    function next() {
+      if (card.className === 'open') {
+        card.addEventListener('transitionend',setCard);
+        flip();
+      } else {
+        setCard();
+      }
+    }
+    function setCard() {
+      var num = Math.floor(Math.random() * words.length);
+      cardFront.innerHTML = words[num]['en'];
+      cardBack.innerHTML = words[num]['ja'];
+      card.removeEventListener('transitionend',setCard);
+    }
+
+    
+    setCard();
 
     function flip() {
       card.className = card.className === ''? 'open' : '';
