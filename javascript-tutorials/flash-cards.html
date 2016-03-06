@@ -57,7 +57,7 @@
   </style>
 </head>
 <body>
-  <div id="card">
+  <div id="card" >
     <div id="card-front"></div>
     <div id="card-back"></div>
   </div>
@@ -100,8 +100,20 @@
       card.removeEventListener('transitionend',setCard);
     }
 
-    
+
     setCard();
+
+    window.addEventListener('keyup',function(e){
+      //e.keyCode
+      //f:70
+      //n:78
+      //console.log(e.keyCode);
+      if (e.keyCode === 70 ) {
+        flip();
+      }else if (e.keyCode === 78) {
+        next();
+      }
+    });
 
     function flip() {
       card.className = card.className === ''? 'open' : '';
