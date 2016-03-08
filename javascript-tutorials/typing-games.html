@@ -3,6 +3,21 @@
 <head>
   <meta charset="utf-8">
   <title>Typing Game!</title>
+  <style>
+  body {
+    padding-top: 40px;
+    font-family: 'Courier',sans-serif;
+    text-align: center;
+  }
+  #target {
+    font-size: 48px;
+    letter-spacing: 3px;
+  }
+  .info {
+    color: #ccc;
+  }
+  </style>
+
 </head>
 <body>
   <p id="target">Word</p>
@@ -10,3 +25,19 @@
     Letters count: <span id="score">0</span>,
     Miss count: <span id="miss">0</span>
     </p>
+    <script>
+    (function() {
+      'use strict';
+
+      var currentWord = 'apple';
+      var currentLocation = 0;
+      var score = 0;
+      var miss = 0;
+      var target = document.getElementById('target');
+      var scoreLavel = document.getElementById('score');
+      var missLabel = document.getElementById('miss');
+    })();
+    
+    </script>
+</body>
+</html>
