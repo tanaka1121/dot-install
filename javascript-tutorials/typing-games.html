@@ -6,7 +6,7 @@
   <style>
   body {
     padding-top: 40px;
-    font-family: 'Courier',sans-serif;
+    font-family: 'Courier New',sans-serif;
     text-align: center;
   }
   #target {
@@ -17,10 +17,9 @@
     color: #ccc;
   }
   </style>
-
 </head>
 <body>
-  <p id="target">Word</p>
+  <p id="target"></p>
   <p class="info">
     Letters count: <span id="score">0</span>,
     Miss count: <span id="miss">0</span>
@@ -29,17 +28,32 @@
     (function() {
       'use strict';
 
+      var words = [
+        'apple',
+        'imagine',
+        'supply',
+        'fun',
+        'happy',
+        'air',
+        'dotinstall',
+      ];
       var currentWord = 'apple';
       var currentLocation = 0;
       var score = 0;
       var miss = 0;
       var target = document.getElementById('target');
-      var scoreLavel = document.getElementById('score');
+      var scoreLabel = document.getElementById('score');
       var missLabel = document.getElementById('miss');
 
       target.innerHTML = currentWord;
-      scoreLavel.innerHTML = score;
+      scoreLabel.innerHTML = score;
       missLabel.innerHTML = miss;
+
+      function setTarget() {
+        currentWord = words[Math.floor(Math.random() * words.length)];
+        target.innerHTML = currentWord;
+        currentLocation = 0;
+      }
 
       window.addEventListener('keyup',function(e){
         //e.keyCode
@@ -54,14 +68,17 @@
           //console.log('score!');
           score++;
           scoreLabel.innerHTML = score;
+          if (currentLocation === currentWord.length) {
+            setTarget();
+          }
         } else {
           //console.log('miss!');
           miss++;
           missLabel.innerHTML = miss;
         }
-      })
-    })();
+      });
 
+    })();
     </script>
 </body>
 </html>
