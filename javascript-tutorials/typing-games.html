@@ -36,8 +36,32 @@
       var target = document.getElementById('target');
       var scoreLavel = document.getElementById('score');
       var missLabel = document.getElementById('miss');
+
+      target.innerHTML = currentWord;
+      scoreLavel.innerHTML = score;
+      missLabel.innerHTML = miss;
+
+      window.addEventListener('keyup',function(e){
+        //e.keyCode
+        //console.log(String.fromCharCode(e.keyCode));
+        if (String.fromCharCode(e.keyCode) === currentWord[currentLocation].toUpperCase()){
+          currentLocation++;
+          var placeholder = '';
+          for (var i = 0; i < currentLocation; i++) {
+            placeholder += '_'
+          }
+          target.innerHTML = placeholder + currentWord.substring(currentLocation);
+          //console.log('score!');
+          score++;
+          scoreLabel.innerHTML = score;
+        } else {
+          //console.log('miss!');
+          miss++;
+          missLabel.innerHTML = miss;
+        }
+      })
     })();
-    
+
     </script>
 </body>
 </html>
