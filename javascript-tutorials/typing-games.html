@@ -21,8 +21,9 @@
 <body>
   <p id="target"></p>
   <p class="info">
-    Letters count: <span id="score">0</span>,
-    Miss count: <span id="miss">0</span>
+    Letters count: <span id="score"></span>,
+    Miss count: <span id="miss"></span>,
+    Remaining Time: <span id="timer"></span>
     </p>
     <script>
     (function() {
@@ -41,23 +42,42 @@
       var currentLocation;
       var score;
       var miss;
+      var timer;
       var target = document.getElementById('target');
       var scoreLabel = document.getElementById('score');
       var missLabel = document.getElementById('miss');
+      var timerLabel = document.getElementById('timer');
       var isStarted;
+      var timerId;
 
       function init() {
         currentWord = 'click to start';
         currentLocation = 0;
         score = 0;
         miss = 0;
+        timer = 3;
         target.innerHTML = currentWord;
         scoreLabel.innerHTML = score;
         missLabel.innerHTML = miss;
+        timerLabel.innerHTML = timer;
         isStarted = false;
       }
 
       init();
+
+      function updateTimer () {
+        timerId = setTimeout(function() {
+          timer--;
+          timerLabel.innerHTML = timer;
+          if (timer <= 0) {
+            alert('game over');
+            clearTimeout(timerId);
+            init();
+            return;
+          }
+          updateTimer();
+        },1000);
+      }
 
 
       function setTarget() {
@@ -69,6 +89,7 @@
         if (!isStarted) {
           isStarted = true;
           setTarget();
+          updateTimer();
         }
       });
 
