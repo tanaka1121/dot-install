@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>Numbers Game</title>
+  <style>
+    body {
+      background: #e0e0e0;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      color: #0088cc;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="scoreArea">Your Score: <span id="scoreText">0.0</span></div>
+  <div id="board">
+  </div>
+  <div id="startButton">START</div>
+</body>
+</html>
