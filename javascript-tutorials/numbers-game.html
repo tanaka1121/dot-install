@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>Numbers Game</title>
+  <style>
+    body {
+      background: #e0e0e0;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      color: #0088cc;
+      font-size: 16px;
+    }
+    #scoreArea {
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+      margin: 30px auto;
+    }
+    #scoreText {
+      font-weight: bold;
+      font-size: 24px;
+    }
+    #startButton {
+      margin: 30px auto;
+      width: 180px;
+      border-radius: 5px;
+      box-shadow: 0 4px 0 #e91b0c;
+      background: #f44336;
+      color: #fff;
+      cursor: pointer;
+      padding: 7px;
+    }
+    #startButton:hover {
+      opacity:0.8;
+    }
+    #startButton.pushed{
+      margin-top: 32px;
+      box-shadow: 0 2px 0 #e91b0c;
+    }
+
+  </style>
+
+</head>
+<body>
+  <div id="scoreArea">Your Score: <span id="scoreText">0.0</span></div>
+  <div id="board">
+  </div>
+  <div id="startButton" class="pushed">START</div>
+</body>
+</html>
