@@ -84,6 +84,8 @@
 
 
       startButton.addEventListener('click', function() {
+        initBoard();
+        currentNum = 0;
         startTime = Date.now();
         if (timerId !== null) clearTimeout(timerId);
         runTimer();
@@ -125,6 +127,11 @@
         }
         function initBoard() {
           var buttons = [];
+
+          // clear child
+          while (board.firstChild)  {
+            board.removeChild(board.firstChild);
+          }
 
 
           //
