@@ -36,6 +36,23 @@
       margin-top: 32px;
       box-shadow: 0 2px 0 #e91b0c;
     }
+    .btn {
+      display:  inline-block;;
+      width: 40px;
+      padding: 7px;
+      border-radius: 5px;
+      box-shadow: 0 4px 0 #0088cc;
+      color: #fff;
+      background: #00aaff;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .btn + .btn {
+      margin-left: 10px;
+    }
+    .btn.inactive {
+      opacity: 0.5;
+    }
 
   </style>
 
@@ -43,6 +60,10 @@
 <body>
   <div id="scoreArea">Your Score: <span id="scoreText">0.0</span></div>
   <div id="board">
+    <div class="btn inactive">0</div>
+    <div class="btn">1</div><br>
+    <div class="btn">2</div>
+    <div class="btn">3</div>
   </div>
   <div id="startButton" class="pushed">START</div>
 </body>
