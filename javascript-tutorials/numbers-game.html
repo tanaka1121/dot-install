@@ -69,38 +69,43 @@
   <script>
     (function() {
       'use strict';
+      var size = 3;
 
       var board = document.getElementById('board');
 
       initBoard();
 
-      function initBoard() {
-        var buttons = [];
 
         function createButton(num) {
           var button;
           button = document.createElement('div');
           button.className = 'btn';
           button.innerHTML = num;
-          return button; 
+          return button;
 
 
         }
+        function initBoard() {
+          var buttons = [];
+
 
           //
-          buttons.push(createButton(0));
-          buttons.push(createButton(1));
-          buttons.push(createButton(2));
-          buttons.push(createButton(3));
+          for (var i = 0; i < size * size; i++) {
+            buttons.push(createButton(i));
+          }
+
 
           //シャッフル
-
           //board追加
-          board.appendChild(buttons[0]);
-          board.appendChild(buttons[1]);
-          board.appendChild(buttons[2]);
-          board.appendChild(buttons[3]);
-
+          while (buttons.length) {
+            var button = buttons.splice(
+              Math.floor(Math.random() * buttons.length), 1
+            );
+            board.appendChild(button[0]);
+            if (buttons.length % size === 0) {
+              board.appendChild(document.createElement('br'));
+            }
+          }
 
       }
 
