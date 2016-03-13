@@ -69,7 +69,8 @@
   <script>
     (function() {
       'use strict';
-      var size = 3;
+      var size = 2;
+      var currentNum = 0;
 
       var board = document.getElementById('board');
 
@@ -81,6 +82,16 @@
           button = document.createElement('div');
           button.className = 'btn';
           button.innerHTML = num;
+          button.addEventListener('click', function() {
+            if ((this.innerHTML - 0) === currentNum) {
+              this.className = 'btn inactive';
+              currentNum++;
+            }
+            if (currentNum === size * size){
+              //game over
+              alert('Clear!')
+            }
+          })
           return button;
 
 
