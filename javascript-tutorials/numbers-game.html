@@ -37,6 +37,7 @@
       box-shadow: 0 2px 0 #e91b0c;
     }
     .btn {
+      position: relative;
       display:  inline-block;;
       width: 40px;
       padding: 7px;
@@ -46,6 +47,16 @@
       background: #00aaff;
       cursor: pointer;
       margin-bottom: 10px;
+    }
+    .btn.hidden:after {
+      content: '?';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 40px;
+      padding: 7px;
+      border-radius: 5px;
+      background: #00aaff;
     }
     .btn + .btn {
       margin-left: 10px;
@@ -85,6 +96,10 @@
 
       startButton.addEventListener('click', function() {
         initBoard();
+        var btns =document.getElementsByClassName('btn');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].className = 'btn';
+        }
         currentNum = 0;
         startTime = Date.now();
         if (timerId !== null) clearTimeout(timerId);
@@ -108,7 +123,7 @@
         function createButton(num) {
           var button;
           button = document.createElement('div');
-          button.className = 'btn';
+          button.className = 'btn hidden';
           button.innerHTML = num;
           button.addEventListener('click', function() {
             if ((this.innerHTML - 0) === currentNum) {
