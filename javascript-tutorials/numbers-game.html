@@ -71,10 +71,36 @@
       'use strict';
       var size = 2;
       var currentNum = 0;
+      var startTime;
+      var timerId;
+
 
       var board = document.getElementById('board');
+      var scoreText = document.getElementById('scoreText');
+      var startButton = document.getElementById('startButton');
+
 
       initBoard();
+
+
+      startButton.addEventListener('click', function() {
+        startTime = Date.now();
+        if (timerId !== null) clearTimeout(timerId);
+        runTimer();
+      });
+      startButton.addEventListener('mousedown', function() {
+        this.className = 'pushed';
+      });
+      startButton.addEventListener('mouseup', function() {
+        this.className = '';
+      });
+      function runTimer() {
+        scoreText.innerHTML = ((Date.now() - startTime) / 1000).toFixed(2);
+        timerId = setTimeout(function() {
+          runTimer();
+
+        }, 10 );
+      }
 
 
         function createButton(num) {
@@ -89,7 +115,8 @@
             }
             if (currentNum === size * size){
               //game over
-              alert('Clear!')
+              //alert('Clear!')
+              clearTimeout(timerId);
             }
           })
           return button;
