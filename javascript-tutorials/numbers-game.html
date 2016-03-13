@@ -60,11 +60,52 @@
 <body>
   <div id="scoreArea">Your Score: <span id="scoreText">0.0</span></div>
   <div id="board">
-    <div class="btn inactive">0</div>
+    <!--<div class="btn inactive">0</div>
     <div class="btn">1</div><br>
     <div class="btn">2</div>
-    <div class="btn">3</div>
+    <div class="btn">3</div> -->
   </div>
   <div id="startButton" class="pushed">START</div>
+  <script>
+    (function() {
+      'use strict';
+
+      var board = document.getElementById('board');
+
+      initBoard();
+
+      function initBoard() {
+        var buttons = [];
+
+        function createButton(num) {
+          var button;
+          button = document.createElement('div');
+          button.className = 'btn';
+          button.innerHTML = num;
+          return button; 
+
+
+        }
+
+          //
+          buttons.push(createButton(0));
+          buttons.push(createButton(1));
+          buttons.push(createButton(2));
+          buttons.push(createButton(3));
+
+          //シャッフル
+
+          //board追加
+          board.appendChild(buttons[0]);
+          board.appendChild(buttons[1]);
+          board.appendChild(buttons[2]);
+          board.appendChild(buttons[3]);
+
+
+      }
+
+    })()
+
+  </script>
 </body>
 </html>
