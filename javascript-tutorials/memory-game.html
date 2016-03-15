@@ -4,88 +4,97 @@
   <meta charset="utf-8">
   <title>Memory Game</title>
   <style>
-  body {
-    margin: 0;
-    background: #00d4f0;
-    text-align: center;
-    font-family: Arial,sans-serif;
-    color: #fff;
-  }
-  #stage {
-    margin: 80px auto 30px;
-    width: 600px;
-  }
-  .card-container {
-    cursor: pointer;
-    display: inline-block;
-    width: 50px;
-    height: 60px;
-    font-size: 24px;
-    font-weight: bold;
-    line-height: 60px;
-    position: relative;
-    perspective: 100px;
-  }
-  .card {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    transform-style: preserve-3d;
-    transition: transform .8s;
-  }
-  .card.open {
-    transform: rotateY(180deg);
-  }
-  .card-back, .card-front {
-    display: block;
-    width: 100%;
-    height: 100%;
-    border-radius: 5px;
-    position: absolute;
-    backface-visibility: hidden;
-  }
-  .card-back {
-    background: #03a9f4;
-  }
-  .card-front{
-    background: #fff;
-    color: #333;
-    transform: rotateY(180deg);
-  }
+    body {
+      margin: 0;
+      background: #00d4f0;
+      text-align: center;
+      font-family: Arial,sans-serif;
+      color: #fff;
+    }
+    #stage {
+      margin: 80px auto 30px;
+      width: 600px;
+    }
+    .card-container {
+        margin:  0 10px 20px 0;
+        cursor: pointer;
+        display: inline-block;
+        width: 50px;
+        height: 60px;
+        font-size: 24px;
+        font-weight: bold;
+        line-height: 60px;
+        position: relative;
+        perspective: 100px;
+    }
+    .card {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        transform-style: preserve-3d;
+        transition: transform .8s;
+    }
+    .card.open {
+        transform: rotateY(180deg);
+    }
+    .card-back, .card-front {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 5px;
+        position: absolute;
+        backface-visibility: hidden;
+    }
+    .card-back {
+        background: #03a9f4;
+    }
+    .card-front {
+        background: #fff;
+        color: #333;
+        transform: rotateY(180deg);
+    }
   </style>
 </head>
 <body>
   <div id="stage">
   </div>
   <script>
-  (function() ) {
-    var cards = [];
+    (function()  {
+          var cards = [],
+              level = 2;
 
-    init();
+          init();
 
-    function init() {
-      cards[0] = createCard(1);
-      cards[1] = createCard(1);
-      cards[2] = createCard(2);
-      cards[3] = createCard(2);
-    }
-    function createCard(num) {
-      var inner,
-          card,
-          container;
+          function init() {
+            for (var i = 1; i <= level; i++) {
+                cards[cards.length] = createCard(i);
+                cards[cards.length] = createCard(i);
+            }
 
-      inner = '<div class="card-back">?</div><div class="card-front">*</div>';
-    }
-    card = document.createElement('div');
-    card.className = 'card'
-    card.innerHTML = iner.replace('*', num);
+            while (cards.length) {
+                var pos = Math.floor(Math.random() * cards.length);
+                document.getElementById('stage').appendChild(cards.splice(pos,1)[0]);
+              }
+          }
 
-    container = document.createElement('div');
-    container.className = 'card-container';
-    container.appendChild(card);
+          function createCard(num) {
+            var inner,
+                card,
+                container;
 
-    return container;
-  }
+            inner = '<div class="card-back">?</div><div class="card-front">*</div>';
+
+            card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = inner.replace('*', num);
+
+            container = document.createElement('div');
+            container.className = 'card-container';
+            container.appendChild(card);
+
+            return container;
+        }
+    })();
   </script>
 </body>
 </html>
