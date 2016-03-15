@@ -16,6 +16,7 @@
     width: 600px;
   }
   .card-container {
+    cursor: pointer;
     display: inline-block;
     width: 50px;
     height: 60px;
@@ -23,11 +24,17 @@
     font-weight: bold;
     line-height: 60px;
     position: relative;
+    perspective: 100px;
   }
   .card {
     width: 100%;
     height: 100%;
     position: absolute;
+    transform-style: preserve-3d;
+    transition: transform .8s;
+  }
+  .card.open {
+    transform: rotateY(180deg);
   }
   .card-back, .card-front {
     display: block;
@@ -35,7 +42,7 @@
     height: 100%;
     border-radius: 5px;
     position: absolute;
-    background: #03a9f4;
+    backface-visibility: hidden;
   }
   .card-back {
     background: #03a9f4;
@@ -43,19 +50,42 @@
   .card-front{
     background: #fff;
     color: #333;
+    transform: rotateY(180deg);
   }
   </style>
 </head>
 <body>
   <div id="stage">
-    <div class="card-container">
-      <div class="card">
-        <div class="card-back">?</div>
-        <div class="card-front">5</div>
-      </div>
-    </div>
   </div>
   <script>
+  (function() ) {
+    var cards = [];
+
+    init();
+
+    function init() {
+      cards[0] = createCard(1);
+      cards[1] = createCard(1);
+      cards[2] = createCard(2);
+      cards[3] = createCard(2);
+    }
+    function createCard(num) {
+      var inner,
+          card,
+          container;
+
+      inner = '<div class="card-back">?</div><div class="card-front">*</div>';
+    }
+    card = document.createElement('div');
+    card.className = 'card'
+    card.innerHTML = iner.replace('*', num);
+
+    container = document.createElement('div');
+    container.className = 'card-container';
+    container.appendChild(card);
+
+    return container;
+  }
   </script>
 </body>
 </html>
