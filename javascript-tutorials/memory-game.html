@@ -53,19 +53,46 @@
         color: #333;
         transform: rotateY(180deg);
     }
+    #btn{
+      margin: 0 auto;
+      width: 200px;
+      padding: 10px;
+      background: #0af;
+      border-radius: 5px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .5s;
+    }
+    #btn.visible {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
   <div id="stage">
   </div>
+  <div id='btn'>Next Stage?</div>
   <script>
     (function()  {
           var cards = [],
-              level = 2;
+              level = 2,
+              flipCount = 0,
+              correctCount = 0,
+              firstCard = null,
+              secondCard = null,
+              btn,
+              stage;
+
+              btn = document.getElementById('btn');
+              stage = document.getElementById('stage');
 
           init();
 
           function init() {
+
+            correctCount = 0;
+            btn.className = '';
+            while (stage.firstChild) stage.removeChild(stage.firstChild);
             for (var i = 1; i <= level; i++) {
                 cards[cards.length] = createCard(i);
                 cards[cards.length] = createCard(i);
@@ -73,7 +100,7 @@
 
             while (cards.length) {
                 var pos = Math.floor(Math.random() * cards.length);
-                document.getElementById('stage').appendChild(cards.splice(pos,1)[0]);
+              stage.appendChild(cards.splice(pos,1)[0]);
               }
           }
 
@@ -87,6 +114,9 @@
             card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = inner.replace('*', num);
+            card.addEventListener('click', function() {
+              flipCard(this);
+            });
 
             container = document.createElement('div');
             container.className = 'card-container';
@@ -94,6 +124,44 @@
 
             return container;
         }
+        function flipCard(card) {
+          if (firstCard !== null && secondCard !== null) {
+            return;
+          }
+          if (card.className.indexOf('open') == -1) {
+              card.className = 'card open';
+          } else {
+              return;
+          }
+          flipCount++;
+          if (flipCount % 2 === 1) {
+              firstCard = card;
+          } else {
+            secondCard = card;
+            setTimeout(function() {
+            judge();
+          }, 900);
+          }
+        }
+        function judge() {
+          if (firstCard.children[1].textContent ===
+              secondCard.children[1].textContent) {
+                correctCount++;
+                //console.log(correctCount);
+                if (correctCount === level) {
+                  btn.className = 'visible';
+                }
+              } else {
+                firstCard.className = 'card' ;
+                secondCard.className = 'card' ;
+              }
+              firstCard = null;
+              secondCard = null;
+        }
+        btn.addEventListener('click', function () {
+          level++;
+          init();
+        });
     })();
   </script>
 </body>
