@@ -10,11 +10,32 @@
   </canvas>
   <script>
   (function() {
-    'use strict'
+    'use strict';
     var canvas = document.getElementById('stage');
     var context;
     var image;
     var IMAGE_URL = '15puzzle.png';
+    // tils[0][0]=0;
+    //tils[0][1]=1;
+    //tils[0][2]=2;
+    //tils[0][3]=3;
+    //tils[1][0]=4;
+    // ...
+
+    var tiles = [];
+    var ROW_COUNT = 4;
+    var COL_COUNT = 4;
+
+    function initTiles() {
+      var row, col;
+      for (row = 0; row < ROW_COUNT; row++) {
+      tiles[row] = [];
+        for (col = 0; col < COL_COUNT; col++) {
+          tiles[row][col] = row * COL_COUNT + col;
+        }
+      }
+      console.log(tiles);
+    }
 
     function drawPuzzle() {
       context.drawImage(image, 0 , 0);
@@ -29,8 +50,10 @@
     image = document.createElement('img');
     image.src = IMAGE_URL;
     image.addEventListener('load', function() {
+      initTiles();
       drawPuzzle();
     });
+
   })();
   </script>
 </body>
