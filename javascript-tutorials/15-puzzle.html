@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>15 Puzzle!</title>
+</head>
+<body>
+  <canvas id = "stage" width="280" height="280">
+    Canvas not supported ...
+  </canvas>
+  <script>
+  (function() {
+    'use strict'
+    var canvas = document.getElementById('stage');
+    var context;
+    var image;
+    var IMAGE_URL = '15puzzle.png';
+
+    function drawPuzzle() {
+      context.drawImage(image, 0 , 0);
+    }
+
+    if (!canvas.getContext) {
+      alert('Canvas not supported ...');
+      return;
+    }
+    context = canvas.getContext('2d');
+
+    image = document.createElement('img');
+    image.src = IMAGE_URL;
+    image.addEventListener('load', function() {
+      drawPuzzle();
+    });
+  })();
+  </script>
+</body>
+</html>
