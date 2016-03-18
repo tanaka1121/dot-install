@@ -38,7 +38,30 @@
     }
 
     function drawPuzzle() {
-      context.drawImage(image, 0 , 0);
+      var row, col;
+      var sx, sy;
+      var dx, dy;
+
+      var w = 70;
+      var h = 70;
+
+      for (row = 0; row < ROW_COUNT; row++) {
+        for (col = 0; col < COL_COUNT; col++) {
+           dx = col * w;
+           dy = row * h;
+           sx = (tiles[row][col] % COL_COUNT) * w;
+           sy = Math.floor((tiles[row][col] / ROW_COUNT)) * h ;
+          context.drawImage(image, sx, sy, w, h, dx, dy, w, h);
+        }
+      }
+
+      var dx = col * w;
+      var dy = row * h;
+
+      var sx = (tiles[row][col] % COL_COUNT) * w;
+      var sy = Math.floor((tiles[row][col] / ROW_COUNT)) * h ;
+      context.drawImage(image, sx, sy, w, h, dx, dy, w, h);
+      //context.drawImage(image, 0 , 0);
     }
 
     if (!canvas.getContext) {
