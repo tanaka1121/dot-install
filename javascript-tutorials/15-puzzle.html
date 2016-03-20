@@ -88,6 +88,20 @@
       drawPuzzle();
     });
 
+    canvas.addEventListener('click', function(e) {
+      var x, y;
+      var rect;
+      var row, col;
+      rect = e.target.getBoundingClientRect();
+      x = e.clientX - rect.left;
+      y = e.clirntY - rect.top;
+      row = Math.foor(y / TILE_HEIGHT);
+      col = Math.foor(x / TILE_WIDTH);
+      if (tiles[tow][col] === -1) {
+        return;
+      }
+        })
+
   })();
   </script>
 </body>
