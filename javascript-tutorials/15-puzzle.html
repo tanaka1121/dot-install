@@ -30,6 +30,13 @@
     var PIC_HEIGHT = 280;
     var TILE_WIDTH = PIC_WIDTH / COL_COUNT;
     var TILE_HEIGHT = PIC_HEIGHT / ROW_COUNT;
+    var UDLR = [
+      [ 0, -1],
+      [ 0, 1],
+      [ -1, 0],
+      [ 1, 0]
+
+    ];
 
     function initTiles() {
       var row, col;
@@ -92,6 +99,8 @@
       var x, y;
       var rect;
       var row, col;
+      var i;
+      var targetRow, targetCol;
       rect = e.target.getBoundingClientRect();
       x = e.clientX - rect.left;
       y = e.clirntY - rect.top;
@@ -99,6 +108,15 @@
       col = Math.foor(x / TILE_WIDTH);
       if (tiles[tow][col] === -1) {
         return;
+      }
+      //console.log(row,col);
+
+      for (i = 0; i < UDRL.length; i++) {
+        targetRow = row + UDLR[i][1];
+        targetCol = col + UDRL[i][0];
+        if(targetRow < 0 || targetRow >= ROW_COUNT) {
+          continue;
+        }
       }
         })
 
