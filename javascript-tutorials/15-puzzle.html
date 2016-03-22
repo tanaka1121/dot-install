@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
   <meta charset="utf-8">
@@ -12,6 +11,7 @@
   <script>
   (function() {
     'use strict';
+
     var canvas = document.getElementById('stage');
     var context;
     var image;
@@ -22,7 +22,6 @@
     //tils[0][3]=3;
     //tils[1][0]=4;
     // ...
-
     var tiles = [];
     var ROW_COUNT = 4;
     var COL_COUNT = 4;
@@ -32,10 +31,9 @@
     var TILE_HEIGHT = PIC_HEIGHT / ROW_COUNT;
     var UDLR = [
       [ 0, -1],
-      [ 0, 1],
+      [ 0,  1],
       [ -1, 0],
-      [ 1, 0]
-
+      [ 1,  0]
     ];
 
     function initTiles() {
@@ -54,10 +52,6 @@
       var row, col;
       var sx, sy;
       var dx, dy;
-
-      var w = 70;
-      var h = 70;
-
       for (row = 0; row < ROW_COUNT; row++) {
         for (col = 0; col < COL_COUNT; col++) {
            dx = col * TILE_WIDTH;
@@ -72,14 +66,20 @@
            }
         }
       }
+    }
 
-      var dx = col * w;
-      var dy = row * h;
-
-      var sx = (tiles[row][col] % COL_COUNT) * w;
-      var sy = Math.floor((tiles[row][col] / ROW_COUNT)) * h ;
-      context.drawImage(image, sx, sy, w, h, dx, dy, w, h);
-      //context.drawImage(image, 0 , 0);
+    function checkResult() {
+      var row, col;
+      for (row = 0; row < ROW_COUNT; row++) {
+        for (col = 0; col < COL_COUNT; col++) {
+          if (row === ROW_COUNT -1 && col === COL_COUNT -1 ) {
+            return true;
+          }
+          if (tiles[row][col] !== row * COL_COUNT + col) {
+            return false;
+          }
+        }
+      }
     }
 
     if (!canvas.getContext) {
@@ -101,24 +101,37 @@
       var row, col;
       var i;
       var targetRow, targetCol;
+
       rect = e.target.getBoundingClientRect();
       x = e.clientX - rect.left;
-      y = e.clirntY - rect.top;
-      row = Math.foor(y / TILE_HEIGHT);
-      col = Math.foor(x / TILE_WIDTH);
-      if (tiles[tow][col] === -1) {
+      y = e.clientY - rect.top;
+      row = Math.floor(y / TILE_HEIGHT);
+      col = Math.floor(x / TILE_WIDTH);
+      if (tiles[row][col] === -1) {
         return;
       }
       //console.log(row,col);
 
-      for (i = 0; i < UDRL.length; i++) {
+      for (i = 0; i < UDLR.length; i++) {
         targetRow = row + UDLR[i][1];
-        targetCol = col + UDRL[i][0];
-        if(targetRow < 0 || targetRow >= ROW_COUNT) {
+        targetCol = col + UDLR[i][0];
+        if (targetRow < 0 || targetRow >= ROW_COUNT) {
           continue;
         }
+        if (targetCol < 0 || targetCol >= COL_COUNT) {
+          continue;
+        }
+        if (tiles[targetRow][targetCol] === -1) {
+          tiles[targetRow][targetCol] = tiles[row][col];
+          tiles[row][col] = -1;
+          drawPuzzle();
+          if (checkResult()) {
+            alert('Game Clear');
+          }
+          break;
+        }
       }
-        })
+    });
 
   })();
   </script>
