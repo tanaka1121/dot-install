@@ -35,6 +35,7 @@
       [ -1, 0],
       [ 1,  0]
     ];
+    var moveCount = 2;
 
     function initTiles() {
       var row, col;
@@ -72,12 +73,40 @@
       var row, col;
       for (row = 0; row < ROW_COUNT; row++) {
         for (col = 0; col < COL_COUNT; col++) {
-          if (row === ROW_COUNT -1 && col === COL_COUNT -1 ) {
+          if (row === ROW_COUNT - 1 && col === COL_COUNT - 1) {
             return true;
           }
           if (tiles[row][col] !== row * COL_COUNT + col) {
             return false;
           }
+        }
+      }
+    }
+
+    function moveBlank(count) {
+      var blankRow, blankCol;
+      var targetPosition;
+      var targetRow, targetCol;
+
+      blankRpw = ROW_COUNT - 1;
+      BlankCol = COL_COUNT - 1;
+
+      while(true) {
+        targetPosition = Math.floor(Math.random() * UDLR.length);
+        targetRow = blankRow + UDLR[targetPosition][1];
+        targetCol = blankCol + UDLR[targetPosition][0];
+        if (targetRow < 0 || targetRow >= ROW_COUNT) {
+          continue;
+        }
+        if (targetCol < 0 || targetCol >= COL_COUNT) {
+          continue;
+        }
+        tiles[blankRow][blankCol] = tiles[targetRow][targetCol];
+        tiles[targetRow][targetCol] = -1;
+        blankRow = targetRow;
+        blankCol = targetCol;
+        if (!--count) {
+          break;
         }
       }
     }
@@ -92,6 +121,7 @@
     image.src = IMAGE_URL;
     image.addEventListener('load', function() {
       initTiles();
+      moveBlank(moveCount);
       drawPuzzle();
     });
 
