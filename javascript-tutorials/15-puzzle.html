@@ -35,7 +35,7 @@
       [ -1, 0],
       [ 1,  0]
     ];
-    var moveCount = 2;
+    var moveCount = 10;
 
     function initTiles() {
       var row, col;
@@ -88,8 +88,8 @@
       var targetPosition;
       var targetRow, targetCol;
 
-      blankRpw = ROW_COUNT - 1;
-      BlankCol = COL_COUNT - 1;
+      blankRow = ROW_COUNT - 1;
+      blankCol = COL_COUNT - 1;
 
       while(true) {
         targetPosition = Math.floor(Math.random() * UDLR.length);
