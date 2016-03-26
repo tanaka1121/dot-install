@@ -50,11 +50,19 @@
             );
             $('.thumbnail').click(function () {
               $('#main img').attr('src', $(this).attr('src'));
+              currentNum = $(this).index();
             });
             $('#prev').click(function() {
               currentNum--;
               if (currentNum < 0) {
                 currentNum = files.length - 1;
+              }
+              $('#main img').attr('src',files[currentNum]);
+            });
+            $('#next').click(function() {
+              currentNum++;
+              if (currentNum > files.length - 1) {
+                currentNum = 0;
               }
               $('#main img').attr('src',files[currentNum]);
             });
