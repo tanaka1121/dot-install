@@ -12,6 +12,11 @@
         .thumbnail {
             width: 125px;
             height: 83px;
+            opacity: 0.5;
+            cursor: pointer;
+        }
+        .current {
+          opacity: 1.0;
         }
         .thumbnail + .thumbnail {
           margin-left: 4px;
@@ -48,9 +53,11 @@
             $('#main').append(
               $('<img>').attr('src',files[0])
             );
+            $('.thumbnail:first').addClass('current');
             $('.thumbnail').click(function () {
               $('#main img').attr('src', $(this).attr('src'));
               currentNum = $(this).index();
+              $(this).addClass('current').siblings().removeClass('current');
             });
             $('#prev').click(function() {
               currentNum--;
@@ -58,6 +65,8 @@
                 currentNum = files.length - 1;
               }
               $('#main img').attr('src',files[currentNum]);
+              $('.thumbnail').removeClass('current');
+              $('.thumbnail').eq(currentNum).addClass('current');
             });
             $('#next').click(function() {
               currentNum++;
@@ -65,6 +74,8 @@
                 currentNum = 0;
               }
               $('#main img').attr('src',files[currentNum]);
+              $('.thumbnail').removeClass('current');
+              $('.thumbnail').eq(currentNum).addClass('current');
             });
         });
     </script>
