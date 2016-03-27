@@ -29,6 +29,9 @@
     <div id ="nav">
       <button id ="prev">&laquo; Previous</button>
       <button id ="next">Next    &raquo;</button>
+      <button id ="play">Play</button>
+      <button id ="stop">Stop</button>
+
 
 
 
@@ -45,7 +48,9 @@
                 'food4.jpg'
             ];
             var img;
+            var timer;
             var currentNum = 0;
+            var nowPlaying = false;
             for (var i = 0; i < files.length; i++) {
                 img = $('<img>').attr('src', files[i]).addClass('thumbnail');
                 $('#thumbnails').append(img);
@@ -76,6 +81,22 @@
               $('#main img').attr('src',files[currentNum]);
               $('.thumbnail').removeClass('current');
               $('.thumbnail').eq(currentNum).addClass('current');
+            });
+            function autoPlay() {
+              $('#next').click();
+              timer = setTimeout(function() {
+                autoPlay();
+              },1000);
+            }
+            $('#play').click(function() {
+              if (nowPlaying) return;
+              nowPlaying = true;
+              autoPlay();
+            });
+            $('#stop').click(function() {
+              clearTimeout(timer);
+              nowPlaying = false;
+
             });
         });
     </script>
