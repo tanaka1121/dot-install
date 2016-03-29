@@ -4,6 +4,12 @@
     <meta charset="utf-8">
     <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
     <title>Mistake looking game!</title>
+    <style>
+      span {
+        cursor: pointer;
+      }
+
+    </style>
 </head>
 <body>
     <h1>Mistake looking game!</h1>
@@ -33,8 +39,16 @@
         var offset =Math.floor(Math.random() * chars.length);
         chars.splice(offset, 1, seikai);
 
-        console.log(chars);
+        //console.log(chars);
         //span要素にそれらの配列の値をはめ込む
+        for (var i = 1; i <= chars.length; i++) {
+          $('#s'+i).text(chars[i - 1]);
+          $('#s'+i).click(function() {
+            if ($(this).text() == seikai) {
+              alert("Correct answer");
+            }
+          });
+        }
 
       }
 
