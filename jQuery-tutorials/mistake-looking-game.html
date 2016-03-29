@@ -25,7 +25,15 @@
         }
         $('#cells').html(cells);
         //dummyで埋められた配列を作る
+        var chars = [];
+        for (var i = 0; i < dim * dim; i++) {
+            chars.push(dummy);
+        }
         //配列のうち一つをseikaiにする
+        var offset =Math.floor(Math.random() * chars.length);
+        chars.splice(offset, 1, seikai);
+
+        console.log(chars);
         //span要素にそれらの配列の値をはめ込む
 
       }
