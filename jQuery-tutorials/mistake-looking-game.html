@@ -16,10 +16,18 @@
         var dim = 5;
 
         //dim * dimのspan要素を作って#cellsに突っ込む
+        var cels = '';
+        for (var i = 1; i <=dim * dim; i++) {
+          cells += '<span id = "s' + i + '"></span>';
+          if (i % dim == 0) {
+              cells += '<br />';
+          }
+        }
+        $('#cells').html(cells);
         //dummyで埋められた配列を作る
         //配列のうち一つをseikaiにする
         //span要素にそれらの配列の値をはめ込む
-        
+
       }
 
 
