@@ -16,10 +16,18 @@
     <p><input type="button" value="START!" onclick="gameStart();"></p>
     <div id="cells"></div>
     <script>
+      var level = 0;
+      var games = [
+        ['問','間'],
+        ['大','太'],
+        ['白','臼'],
+      ];
+      var MAX_LEVEL = games.length - 1;
+      var dim = 5;
+
       function gameStart() {
-        var dummy = '問';
-        var seikai = '間';
-        var dim = 5;
+        var dummy = games[level][0];
+        var seikai = games[level][1];
 
         //dim * dimのspan要素を作って#cellsに突っ込む
         var cels = '';
@@ -45,7 +53,12 @@
           $('#s'+i).text(chars[i - 1]);
           $('#s'+i).click(function() {
             if ($(this).text() == seikai) {
-              alert("Correct answer");
+              level++;
+              if(level > MAX_LEVEL) {
+                alert("GAme Over!");
+              }
+              gameStart();
+              
             }
           });
         }
