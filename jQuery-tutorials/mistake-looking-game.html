@@ -14,6 +14,7 @@
 <body>
     <h1>Mistake looking game!</h1>
     <p><input type="button" value="START!" onclick="gameStart();"></p>
+    <p id="score"></p>
     <div id="cells"></div>
     <script>
       var level = 0;
@@ -24,10 +25,16 @@
       ];
       var MAX_LEVEL = games.length - 1;
       var dim = 5;
+      var t1;
+      var t2;
 
       function gameStart() {
         var dummy = games[level][0];
         var seikai = games[level][1];
+
+        if (level == 0) {
+          t1 = new Date().getTime();
+        }
 
         //dim * dimのspan要素を作って#cellsに突っ込む
         var cels = '';
@@ -54,18 +61,15 @@
           $('#s'+i).click(function() {
             if ($(this).text() == seikai) {
               level++;
-              if(level > MAX_LEVEL) {
-                alert("GAme Over!");
+              if (level > MAX_LEVEL) {
+                t2 = new Date().getTime();
+                $('#score').text('Your score is '+(t2-t1)/1000+'!!');
               }
               gameStart();
-              
             }
           });
         }
-
       }
-
-
     </script>
 </body>
 </html>
