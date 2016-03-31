@@ -33,6 +33,7 @@
         var seikai = games[level][1];
 
         if (level == 0) {
+          $('#score').empty();
           t1 = new Date().getTime();
         }
 
@@ -64,6 +65,8 @@
               if (level > MAX_LEVEL) {
                 t2 = new Date().getTime();
                 $('#score').text('Your score is '+(t2-t1)/1000+'!!');
+                level = 0;
+                return false;
               }
               gameStart();
             }
