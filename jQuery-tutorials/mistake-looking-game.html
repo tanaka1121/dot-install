@@ -24,7 +24,9 @@
         ['白','臼'],
       ];
       var MAX_LEVEL = games.length - 1;
-      var dim = 5;
+      var DIM_FIRST = 5;
+      var DIM_DELTA = 3;
+      var dim = DIM_FIRST;
       var t1;
       var t2;
 
@@ -62,10 +64,12 @@
           $('#s'+i).click(function() {
             if ($(this).text() == seikai) {
               level++;
+              dim += DIM_DELTA;
               if (level > MAX_LEVEL) {
                 t2 = new Date().getTime();
                 $('#score').text('Your score is '+(t2-t1)/1000+'!!');
                 level = 0;
+                dim = DIM_FIRST;
                 return false;
               }
               gameStart();
