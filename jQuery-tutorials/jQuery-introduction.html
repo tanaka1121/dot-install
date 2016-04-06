@@ -31,16 +31,13 @@
       $(function() {
         // セレクタ：処理対象となるDOM要素を指定する記法
         //メソッド：処理
-        //フィルタ
-        // :eq()
-        // :gt(), :lt()
-        // :even, :odd
-        // :contains()
-        // :first, :last
-        //$("#sub > li:eq(2)").css('color', 'red');
-        //$("#sub > li:gt(1)").css('color', 'red');
-        //$("#sub > li:odd").css('color', 'red');
-        $("#sub > li:contains('4')").css('color', 'red'); 
+        //メゾットを使ったDOM要素の指定
+        // parent(), children()
+        // next(), prev()
+        // siblings() - 兄弟要素
+        //$("#sub").children().css('color', 'red');
+        //$("#sub > li:eq(2)").prev().css('color', 'red');
+        $("#sub > li:eq(2)").siblings().css('color', 'red');
     });
   </script>
 
