@@ -3,27 +3,21 @@
 <head>
 <meta charset="utf-8">
 <title>Practice of jQuery</title>
-  <style>
-    .myStyle {
-      border:5px solid green;
-      font-size: 48px;
-    }
-  </style>
+
 </head>
 <body>
   <p>Practice of jQuery</p>
-  <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+  <a href="http://google.com" data-sitename="google">Google</a>
+
+  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
   <script>
     //$(document).ready(function() {
       $(function() {
-        // セレクタ：処理対象となるDOM要素を指定する記法
-        //メソッド：処理
-        // .css
-        //$('p').css('color', 'red').css('background', 'blue');
-        //console.log($('p').css('color'));
-
-        //addClass removeClass
-        $('p').addClass('myStyle');
+        // attr
+        //console.log($('a').attr('href'));
+        //$('a').attr('href', 'http://google.co.jp');
+        // data
+        console.log($('a').data('sitename'));
 
     });
   </script>
