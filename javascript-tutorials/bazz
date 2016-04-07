@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>jQueryでスライドショー</title>
+    <style>
+      body {
+        margin: 10px auto;
+        text-align: center;
+      }
+        .thumbnail {
+            width: 125px;
+            height: 83px;
+        }
+        .thumbnail + .thumbnail {
+          margin-left: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="thumbnails"></div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script>
+        $(function() {
+            var files = [
+                'food1.jpg',
+                'food2.jpg',
+                'food3.jpg',
+                'food4.jpg'
+            ];
+            var img;
+            for (var i = 0; i < files.length; i++) {
+                img = $('<img>').attr('src', files[i]).addClass('thumbnail');
+                $('#thumbnails').append(img);
+            }
+        });
+    </script>
+</body>
+</html>
