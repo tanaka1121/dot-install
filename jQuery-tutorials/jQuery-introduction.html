@@ -7,23 +7,24 @@
 </head>
 <body>
   <p>Practice of jQuery</p>
-  <a href="http://google.com" data-sitename="google">Google</a>
-  <input type="text" value="hello">
+  <ul>
+        <li>0</li>
+        <li>1</li>
+        <li>2</li>
+    </ul>
   <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
   <script>
     //$(document).ready(function() {
-      $(function() {
-        // text
-        // html
-        // val
-        // removw.empty
-        //$('p').text('just changed');
-        //$('p').html('<a href=""></a>');
-        //console.log($('input').val('hello, again'));
-        ('p').remove();
-    });
+    $(function() {
+          // before, after -> inserBefore, insertAfter
+          // prepend, append -> prependTo, appendTo
+
+          var li = $('<li>').text('just added');
+          //$('ul > li:eq(1)').before(li);
+          // li.insertBefore($('ul > li:eq(1)'));
+          //$('ul').append(li);
+          li.appendTo($('ul'));
+      });
   </script>
-
-
 </body>
 <html>
