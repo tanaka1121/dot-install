@@ -7,23 +7,20 @@
 </head>
 <body>
   <p>Practice of jQuery</p>
-  <ul>
-        <li>0</li>
-        <li>1</li>
-        <li>2</li>
-    </ul>
+  <div id="box" style="width:100px;height:100px;background:red;"></div>
+
   <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
   <script>
-    //$(document).ready(function() {
-    $(function() {
-          // before, after -> inserBefore, insertAfter
-          // prepend, append -> prependTo, appendTo
-
-          var li = $('<li>').text('just added');
-          //$('ul > li:eq(1)').before(li);
-          // li.insertBefore($('ul > li:eq(1)'));
-          //$('ul').append(li);
-          li.appendTo($('ul'));
+         $(function() {
+             // hide, show
+             // fadeOut, fadeIn
+             // toggle
+             //$('#box').hide(800);
+             //$('#box').fadeOut(800);
+             //$('#box').toggle(800);
+             $('#box').fadeOut(800, function() {
+                 alert("gone!");
+             });
       });
   </script>
 </body>
