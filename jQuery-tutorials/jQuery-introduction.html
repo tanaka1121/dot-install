@@ -7,25 +7,26 @@
 </head>
 <body>
   <p>Practice of jQuery</p>
-  <div id="box" style="width:100px;height:100px;background:red;"></div>
-
+  <input type="text" id="name">
+    <select id="members" name="members">
+        <option>taguchi</option>
+        <option>fkoji</option>
+        <option>dotinstall</option>
+    </select>
   <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
   <script>
   $(function() {
-            // click
-            // mouseover, mouseout, mousemove
-            $('#box').click(function() {
-                alert("hi!");
-            });
-            $('#box')
-                .mouseover(function() {
-                    $(this).css('background', 'green');
-                })
-                .mouseout(function() {
-                    $(this).css('background', 'red');
-                })
-                .mousemove(function(e) {
-                    $(this).text(e.pageX);
+              // focus, blur
+              // change
+              $('#name')
+                  .focus(function() {
+                      $(this).css('background', 'red');
+                  })
+                  .blur(function() {
+                      $(this).css('background', 'white');
+                  });
+              $('#members').change(function() {
+                  alert('changed!');
              });
       });
   </script>
