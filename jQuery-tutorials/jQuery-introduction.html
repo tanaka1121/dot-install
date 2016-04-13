@@ -8,25 +8,23 @@
 <body>
   <p>Practice of jQuery</p>
   <input type="text" id="name">
-    <select id="members" name="members">
-        <option>taguchi</option>
-        <option>fkoji</option>
-        <option>dotinstall</option>
-    </select>
+    <button>Add!</button>
   <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
   <script>
   $(function() {
-              // focus, blur
-              // change
-              $('#name')
-                  .focus(function() {
-                      $(this).css('background', 'red');
-                  })
-                  .blur(function() {
-                      $(this).css('background', 'white');
-                  });
-              $('#members').change(function() {
-                  alert('changed!');
+    $('button').click(function() {
+                    var p = $('<p>').text('vanish!').addClass('vanish');
+                    $(this).before(p);
+                });
+
+                /*
+                $('.vanish').click(function() {
+                    $(this).remove();
+                });
+                */
+
+                $('body').on('click', '.vanish', function() {
+                    $(this).remove();
              });
       });
   </script>
