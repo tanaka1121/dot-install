@@ -9,7 +9,7 @@
 <table>
     <thead>
         <tr>
-            <th class="dothesort">点数</th>
+            <th class="dothesort">POINT</th>
         </tr>
     </thead>
     <tbody>
@@ -34,14 +34,22 @@
 $(function() {
 
     // 並べかえ順を設定
+    var sortOrder = 1; // 1:昇順, -1:降順
 
     // 列をクリックしたら
     $('dothesort').click(function() {
 
         // 行全体を取得
+        var $rows = $('tbody>tr');
+
         // 行を並べ替え（点数で）
+
+
         // tbodyを並び替えされた行全体で入れ替え
+        $('tbody').empty().append($rows);
+
         // 並べ替え順を反転
+        sortOrder *= -1;
 
     });
 
