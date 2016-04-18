@@ -9,8 +9,8 @@
 <table>
     <thead>
         <tr>
-            <th class="dothesort" data-type="string">NAME</th>
-            <th class="dothesort" data-type="integer">POINT</th>
+            <th class="dothesort" data-type="string">NAME<span></span></th>
+            <th class="dothesort" data-type="integer">POINT<span></span></th>
         </tr>
     </thead>
     <tbody>
@@ -58,14 +58,32 @@ $(function() {
         // tbodyを並び替えされた行全体で入れ替え
         $('tbody').empty().append($rows);
 
+        var arrow = sortOrder === 1 ? "▲" : "▼";
+        $('.dothesort > span').text('');
+        $(this).find('span').text(arrow);
+
         // 並べ替え順を反転
         sortOrder *= -1;
 
     });
 
     function compare(a, b, type, col) {
-        var _a = $(a).find('td').text() * 1;
-        var _b = $(b).find('td').text() * 1;
+        var _a = $(a).find('td').eq(col).text();
+        var _b = $(b).find('td').eq(col).text();
+
+        if (type == "string") {
+            if (_a < _b) {
+                return -1;
+            }
+            if (_a > _b) {
+                return 1;
+            }
+            return 0;
+        } else {
+            _a *= 1;
+            _b *= 1;
+            return _a - _b;
+        }
 
     }
 
