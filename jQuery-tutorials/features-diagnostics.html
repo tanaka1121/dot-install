@@ -10,8 +10,18 @@
 <body>
     <h1>Features Diagnostics</h1>
     <p><input type="text" id="name" value=""></p>
-    <p><input type="button" id="getResult" value="診断！"</p>
+    <p><input type="button" id="getResult" value="診断！"></p>
     <h2>Diagnosis</h2>
-    <p>Click here for the results</p>
+    <p></p>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script>
+        $(function() {
+            $("#getResult").click(function() {
+                // 名前の取得
+                var name = $("#name").val();
+                console.log(name);
+            });
+        });
+    </script>
 </body>
 </html>
