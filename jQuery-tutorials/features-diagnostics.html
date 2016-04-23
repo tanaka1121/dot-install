@@ -12,14 +12,24 @@
     <p><input type="text" id="name" value=""></p>
     <p><input type="button" id="getResult" value="診断！"></p>
     <h2>Diagnosis</h2>
-    <p></p>
+    <p id="result">Features Diagnostics</p>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script>
         $(function() {
             $("#getResult").click(function() {
                 // 名前の取得
                 var name = $("#name").val();
-                console.log(name);
+                // console.log(name);
+
+                // タイプの生成
+                var types = ["勇者", "魔法使い", "戦士", "遊び人", "スーパースター"];
+                // 0-n の乱数
+                // Math.floor(Math.random() * (n+1))
+                var type = types[Math.floor(Math.random() * types.length)];
+
+                // 結果の表示
+                var result = name + "さんは「" + type + "」タイプです！";
+                $("#result").text(result);
             });
         });
     </script>
