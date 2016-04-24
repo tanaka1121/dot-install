@@ -12,7 +12,7 @@
     <p><input type="text" id="name" value=""></p>
     <p><input type="button" id="getResult" value="診断！"></p>
     <h2>Diagnosis</h2>
-    <p id="result">Features Diagnostics</p>
+    <p id="result">Click here for the results</p>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script>
         $(function() {
@@ -27,8 +27,12 @@
                 // Math.floor(Math.random() * (n+1))
                 var type = types[Math.floor(Math.random() * types.length)];
 
+                // キャラクターの生成
+                var characters = ["賢い", "勇ましい", "かわいい", "情けない", "頼りない"];
+                var character = characters[Math.floor(Math.random() * characters.length)];
+
                 // 結果の表示
-                var result = name + "さんは「" + type + "」タイプです！";
+                var result = name + "さんは「" + character + type + "」タイプです！";
                 $("#result").text(result);
             });
         });
