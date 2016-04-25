@@ -34,6 +34,9 @@
                 // 結果の表示
                 var result = name + "さんは「" + character + type + "」タイプです！";
                 $("#result").text(result);
+                // ツイートリンクの表示
+                var tweetLink = "<a href='https://twitter.com/intent/tweet'>ツイートする</a>";
+                $("#tweet").html(tweetLink);
             });
         });
     </script>
