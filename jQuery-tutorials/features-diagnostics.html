@@ -35,7 +35,7 @@
                 var result = name + "さんは「" + character + type + "」タイプです！";
                 $("#result").text(result);
                 // ツイートリンクの表示
-                var tweetLink = "<a href='https://twitter.com/intent/tweet'>ツイートする</a>";
+                var tweetLink = "<a href='https://twitter.com/intent/tweet?text=" + encodeURIComponent(result) + "&hashtags=dotinstall' target='_blank'>ツイートする</a>";
                 $("#tweet").html(tweetLink);
             });
         });
