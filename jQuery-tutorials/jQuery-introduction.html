@@ -7,24 +7,19 @@
 </head>
 <body>
   <p>Practice of jQuery</p>
-  <input type="text" id="name">
-    <button>Add!</button>
-  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
-  <script>
-  $(function() {
-    $('button').click(function() {
-                    var p = $('<p>').text('vanish!').addClass('vanish');
-                    $(this).before(p);
-                });
+  <button>read more</button>
+    <div id="result"></div>
 
-                /*
-                $('.vanish').click(function() {
-                    $(this).remove();
-                });
-                */
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script>
+        $(function() {
 
-                $('body').on('click', '.vanish', function() {
-                    $(this).remove();
+            // Ajax
+            // Asynchronous JavaScript + XML
+            // サーバーと通信 + ページの書き換え
+
+            $('button').click(function() {
+                $('#result').load('more.html');
              });
       });
   </script>
