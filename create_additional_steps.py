@@ -1,233 +1,213 @@
 """
-本文FMT 追加手順(15〜19) 生成スクリプト
+本文FMT 追加手順(15〜19) 生成スクリプト - 書き方ルール準拠版
 
-①〜⑤の場合分けに対応する追加手順を、元の「本文FMT」シートと同じ
-12行1ステップの書式（手順No./手順/急所/写真）で作成する。
-コピー＆ペーストで元ファイルの手順14の後ろ(203行目以降)に追加できる。
-
-使用方法:
-    python create_additional_steps.py
-    → 本文FMT_追加手順15-19.xlsx
+書き方1の分岐ルール: 「○○の場合→手順【N】へ」と文章で明記
+フォント: 本文24pt / 補足16pt / 急所14pt（すべてHGP創英角ゴシックUB）
+色: 原則白黒（書き方1: 「原則白黒印刷」）
 """
 
 from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
-from openpyxl.drawing.image import Image as XLImage
+from openpyxl.styles import Font, Alignment, Border, Side
 
 OUTPUT_FILE = "本文FMT_追加手順15-19.xlsx"
 
-FONT_NO     = Font(name="Arial Black", size=24)
-FONT_PROC   = Font(name="HGP創英角ｺﾞｼｯｸUB", size=20)
-FONT_SUPP_L = Font(name="HGP創英角ｺﾞｼｯｸUB", size=16)
-FONT_SUPP   = Font(name="HGP創英角ｺﾞｼｯｸUB", size=14)
-FONT_KEY    = Font(name="HGP創英角ｺﾞｼｯｸUB", size=14)
+# ── フォント（書き方1: 文字→HGP創英角ゴシックUB, 数字→Arial Black）
+FONT_NO   = Font(name="Arial Black",       size=24)
+FONT_PROC = Font(name="HGP創英角ｺﾞｼｯｸUB", size=24)
+FONT_SUPP = Font(name="HGP創英角ｺﾞｼｯｸUB", size=16)
+FONT_KEY  = Font(name="HGP創英角ｺﾞｼｯｸUB", size=14)
 
-THIN  = Side(style="thin", color="000000")
-HAIR  = Side(style="hair", color="808080")
+# ── 罫線（元シートに合わせてthin/hair）
+THIN = Side(style="thin")
+HAIR = Side(style="hair")
+B_OUTER = Border(left=THIN, right=THIN, top=THIN,  bottom=THIN)
+B_INNER = Border(left=HAIR, right=HAIR, top=HAIR,  bottom=HAIR)
+B_MIX   = Border(left=THIN, right=THIN, top=HAIR,  bottom=HAIR)
 
-BORDER_OUTER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
-BORDER_INNER = Border(left=HAIR, right=HAIR, top=HAIR, bottom=HAIR)
-
-ALIGN_NO   = Alignment(horizontal="right", vertical="top")
-ALIGN_PROC = Alignment(horizontal="left", vertical="top", wrap_text=True)
-ALIGN_KEY_LABEL = Alignment(horizontal="right", vertical="top", wrap_text=True)
-ALIGN_KEY_TEXT  = Alignment(horizontal="left", vertical="top", wrap_text=True)
-ALIGN_CENTER = Alignment(horizontal="center", vertical="center")
-
-FILL_CASE = {
-    "12": "DDEBF7",  # ①YES・②共通 → OLPN統合
-    "13": "DDEBF7",  # ①NO → 国内梱包
-    "14": "E4DFEC",  # ③ → 分割ラベル
-    "15": "FCE4D6",  # ④ → 親部材集約
-    "16": "D9D9D9",  # ⑤ → MAラベル再印刷
-}
-
-ROW_HEIGHT = 24
+ALIGN_R_TOP  = Alignment(horizontal="right",  vertical="top",    wrap_text=True)
+ALIGN_L_TOP  = Alignment(horizontal="left",   vertical="top",    wrap_text=True)
+ALIGN_C_MID  = Alignment(horizontal="center", vertical="center", wrap_text=True)
+ROW_H = 24
 
 
-def set_cell(ws, coord, value=None, font=None, align=None, border=None, fill=None):
+def s(ws, coord, val=None, font=None, align=None, border=None):
     c = ws[coord]
-    if value is not None:
-        c.value = value
-    if font:
-        c.font = font
-    if align:
-        c.alignment = align
-    if border:
-        c.border = border
-    if fill:
-        c.fill = PatternFill(start_color=fill, end_color=fill, fill_type="solid")
+    if val   is not None: c.value = val
+    if font  is not None: c.font  = font
+    if align is not None: c.alignment = align
+    if border is not None: c.border = border
     return c
 
 
-def build_step(ws, start_row, step_no, proc_text, supp_text,
-                s_text="", s_reason="", q_text="", q_reason="",
-                fill=None, image_path=None):
-    """1ステップ(12行)を作成する"""
-    r0 = start_row  # 上段ブロック開始行
-    r6 = start_row + 6  # 下段ブロック開始行
+def merge(ws, r1, c1, r2, c2, val=None, font=None, align=None, border=B_OUTER):
+    ws.merge_cells(start_row=r1, start_column=c1, end_row=r2, end_column=c2)
+    from openpyxl.utils import get_column_letter as gcl
+    coord = f"{gcl(c1)}{r1}"
+    s(ws, coord, val, font, align, border)
+    # 結合範囲全体に外枠を引く
+    for row in range(r1, r2 + 1):
+        for col in range(c1, c2 + 1):
+            c = ws.cell(row=row, column=col)
+            if c.border == Border():
+                c.border = B_MIX
 
-    for r in range(start_row, start_row + 12):
-        ws.row_dimensions[r].height = ROW_HEIGHT
 
-    # ── 手順No. ───────────────────────────────
-    ws.merge_cells(start_row=r0, start_column=2, end_row=r0 + 5, end_column=2)
-    set_cell(ws, f"B{r0}", step_no, font=FONT_NO, align=ALIGN_NO,
-             border=BORDER_OUTER, fill=fill)
+def build_step(ws, start, no, proc, supp,
+               s_text="", s_reason="", q_text="", q_reason=""):
+    """
+    12行1ステップブロック（元フォーマット準拠）
+    行レイアウト（相対オフセット）:
+      0-5  : 手順No(B) / 手順(C:H) / 急所S(J:M) / 写真(N:T)
+      6-11 : 補足(B:H) / 急所Q(J:M)
+    """
+    r, r6 = start, start + 6
+    for i in range(12):
+        ws.row_dimensions[r + i].height = ROW_H
 
-    # ── 手順 ─────────────────────────────────
-    ws.merge_cells(start_row=r0, start_column=3, end_row=r0 + 5, end_column=8)
-    set_cell(ws, f"C{r0}", proc_text, font=FONT_PROC, align=ALIGN_PROC,
-             border=BORDER_OUTER, fill=fill)
+    # ── 手順No.
+    merge(ws, r, 2, r+5, 2, no, FONT_NO, ALIGN_R_TOP)
 
-    # ── 補足 ─────────────────────────────────
-    ws.merge_cells(start_row=r6, start_column=2, end_row=r6 + 5, end_column=2)
-    set_cell(ws, f"B{r6}", "補足:", font=FONT_SUPP_L, align=ALIGN_NO,
-             border=BORDER_OUTER, fill=fill)
+    # ── 手順（本文 24pt）
+    merge(ws, r, 3, r+5, 8, proc, FONT_PROC, ALIGN_L_TOP)
 
-    ws.merge_cells(start_row=r6, start_column=3, end_row=r6 + 5, end_column=8)
-    set_cell(ws, f"C{r6}", supp_text, font=FONT_SUPP, align=ALIGN_PROC,
-             border=BORDER_OUTER, fill=fill)
+    # ── 補足: ラベル
+    merge(ws, r6, 2, r6+5, 2, "補足:", FONT_SUPP, ALIGN_R_TOP)
 
-    # ── スペーサー列 I ────────────────────────
-    ws.merge_cells(start_row=r0, start_column=9, end_row=r0 + 11, end_column=9)
-    set_cell(ws, f"I{r0}", "", border=BORDER_INNER)
+    # ── 補足（16pt）
+    merge(ws, r6, 3, r6+5, 8, supp, FONT_SUPP, ALIGN_L_TOP)
 
-    # ── 急所(S/理由/Q/理由) ─────────────────────
-    # S:
-    ws.merge_cells(start_row=r0, start_column=10, end_row=r0 + 2, end_column=10)
-    set_cell(ws, f"J{r0}", "S:", font=FONT_KEY, align=ALIGN_KEY_LABEL, border=BORDER_INNER)
-    ws.merge_cells(start_row=r0, start_column=11, end_row=r0 + 2, end_column=13)
-    set_cell(ws, f"K{r0}", s_text, font=FONT_KEY, align=ALIGN_KEY_TEXT, border=BORDER_INNER)
+    # ── スペーサー I列
+    merge(ws, r, 9, r+11, 9, "", None, None, B_INNER)
 
-    # 理由(S):
-    ws.merge_cells(start_row=r0 + 3, start_column=10, end_row=r0 + 5, end_column=10)
-    set_cell(ws, f"J{r0+3}", "理由:", font=FONT_KEY, align=ALIGN_KEY_LABEL, border=BORDER_INNER)
-    ws.merge_cells(start_row=r0 + 3, start_column=11, end_row=r0 + 5, end_column=13)
-    set_cell(ws, f"K{r0+3}", s_reason, font=FONT_KEY, align=ALIGN_KEY_TEXT, border=BORDER_INNER)
+    # ── 急所 S:
+    merge(ws, r,   10, r+2,  10, "S:",    FONT_KEY, ALIGN_R_TOP, B_INNER)
+    merge(ws, r,   11, r+2,  13, s_text,  FONT_KEY, ALIGN_L_TOP, B_INNER)
+    merge(ws, r+3, 10, r+5,  10, "理由:", FONT_KEY, ALIGN_R_TOP, B_INNER)
+    merge(ws, r+3, 11, r+5,  13, s_reason,FONT_KEY, ALIGN_L_TOP, B_INNER)
 
-    # Q:
-    ws.merge_cells(start_row=r6, start_column=10, end_row=r6 + 2, end_column=10)
-    set_cell(ws, f"J{r6}", "Q:", font=FONT_KEY, align=ALIGN_KEY_LABEL, border=BORDER_INNER)
-    ws.merge_cells(start_row=r6, start_column=11, end_row=r6 + 2, end_column=13)
-    set_cell(ws, f"K{r6}", q_text, font=FONT_KEY, align=ALIGN_KEY_TEXT, border=BORDER_INNER)
+    # ── 急所 Q:
+    merge(ws, r6,   10, r6+2, 10, "Q:",    FONT_KEY, ALIGN_R_TOP, B_INNER)
+    merge(ws, r6,   11, r6+2, 13, q_text,  FONT_KEY, ALIGN_L_TOP, B_INNER)
+    merge(ws, r6+3, 10, r6+5, 10, "理由:", FONT_KEY, ALIGN_R_TOP, B_INNER)
+    merge(ws, r6+3, 11, r6+5, 13, q_reason,FONT_KEY, ALIGN_L_TOP, B_INNER)
 
-    # 理由(Q):
-    ws.merge_cells(start_row=r6 + 3, start_column=10, end_row=r6 + 5, end_column=10)
-    set_cell(ws, f"J{r6+3}", "理由:", font=FONT_KEY, align=ALIGN_KEY_LABEL, border=BORDER_INNER)
-    ws.merge_cells(start_row=r6 + 3, start_column=11, end_row=r6 + 5, end_column=13)
-    set_cell(ws, f"K{r6+3}", q_reason, font=FONT_KEY, align=ALIGN_KEY_TEXT, border=BORDER_INNER)
-
-    # ── 写真 ─────────────────────────────────
-    ws.merge_cells(start_row=r0, start_column=14, end_row=r0 + 11, end_column=20)
-    set_cell(ws, f"N{r0}", "", border=BORDER_OUTER, align=ALIGN_CENTER)
-
-    if image_path:
-        img = XLImage(image_path)
-        scale = 380 / img.width
-        img.width = int(img.width * scale)
-        img.height = int(img.height * scale)
-        ws.add_image(img, f"N{r0}")
+    # ── 写真欄
+    merge(ws, r, 14, r+11, 20, "", None, ALIGN_C_MID)
 
 
 def main():
     wb = Workbook()
     ws = wb.active
-    ws.title = "本文FMT (追加手順)"
+    ws.title = "本文FMT (例外処理手順)"
 
-    # ── 列幅(本文FMTに合わせる) ────────────────
-    widths = {"A": 10.33, "B": 10.16, "C": 8.5, "D": 8.5, "E": 8.5, "F": 8.5,
-              "G": 8.5, "H": 8.5, "I": 10.33, "J": 6.33, "K": 8.33, "L": 8.5,
-              "M": 8.5, "N": 9.33}
+    # ── 列幅（元シートに合わせる）
+    widths = {"A":10.33,"B":10.16,"C":8.5,"D":8.5,"E":8.5,"F":8.5,
+              "G":8.5,  "H":8.5,  "I":10.33,"J":6.33,"K":8.33,"L":8.5,
+              "M":8.5,  "N":9.33}
     for col, w in widths.items():
         ws.column_dimensions[col].width = w
 
-    # 案内行
-    ws["B1"] = "※元ファイル「本文FMT」シートの手順14の下(203行目以降)に、この行ごとコピー＆貼り付けしてください"
-    ws["B1"].font = Font(name="游ゴシック", size=10, bold=True, color="C00000")
-    ws.row_dimensions[1].height = 20
+    # ── 案内メモ（赤テキスト：元ファイルには含めない）
+    ws["B1"] = (
+        "【元ファイル 手順1 の「補足」欄(C14:H19)に追記する文章案】\n"
+        "・LPN分割を実施した場合　　　　　→手順【15】へ\n"
+        "・LPN分割を実施していない場合　　→手順【16】へ\n"
+        "・LPN分割で数量を誤った場合　　　→手順【15】へ\n"
+        "・LPN分割を過剰に行った場合　　　→手順【17】へ\n"
+        "・複数部材のLPN分割を途中で中断した場合　→手順【18】へ\n"
+        "・プリンタを設定しないままLPN分割した場合→手順【19】へ"
+    )
+    ws["B1"].font = Font(name="HGP創英角ｺﾞｼｯｸUB", size=14, color="C00000")
+    ws["B1"].alignment = Alignment(vertical="top", wrap_text=True)
+    ws.row_dimensions[1].height = 130
+    ws.merge_cells("B1:T1")
 
-    row = 3  # 手順15開始行
+    row = 3  # 手順15 開始
 
-    # ── 手順15: OLPN統合（①YES・②共通） ─────────
+    # ── 手順15: OLPN統合（①実施済み / ②数量誤り）────────────────
     build_step(
         ws, row, "15",
-        "OLPN統合を実施する\n"
-        "（①即出荷後にLPN分割した場合のYES分岐／②LPN分割で数量を誤った場合に対応）",
-        "【場合分け対応表】\n"
-        "①即出荷後にLPN分割を忘れた → 手順15・16\n"
-        "②LPN分割で数量を誤った　　　 → 手順15\n"
-        "③LPN分割を過剰に行った　　　 → 手順17\n"
-        "④複数部材のLPN分割を中断した → 手順18\n"
-        "⑤プリンタ未設定のままLPN分割 → 手順19",
-        s_text="統合対象のLPNを誤らないよう、現品票で再確認する",
-        s_reason="統合先LPNの誤りによる出荷誤り防止",
+        "OLPNを統合する",
+        (
+            "対象：\n"
+            "①即出荷後にLPN分割を実施した場合\n"
+            "②LPN分割で数量を誤ってしまった場合"
+        ),
+        s_text="統合対象のLPNを現品票で再確認する",
+        s_reason="統合先LPN誤りによる出荷誤り防止",
         q_text="統合後、数量が分割前の総数と一致しているか確認する",
         q_reason="数量誤りの再発防止",
-        fill=FILL_CASE["12"],
-        image_path="手順1_即出荷後フロー図.png",
     )
     row += 12
 
-    # ── 手順16: 国内梱包（①NO分岐） ──────────────
+    # ── 手順16: 国内梱包（①LPN分割未実施のNO分岐）───────────────
     build_step(
         ws, row, "16",
-        "対象がワンレックか確認し、梱包を実施する\n"
-        "（①即出荷後にLPN分割していない場合のNO分岐）\n\n"
-        "・ワンレック　→ 国内梱包（ワンレック）を実施する\n"
-        "・複数レック　→ 国内梱包（複数レック）を実施し、"
-        "イレギュラー置場へ移動する",
-        "複数レックの場合はイレギュラー置場への移動が必要。"
-        "対応漏れがないよう関係者へ必ず周知すること。",
-        s_text="複数レックの場合、すべてのレックを移動したか確認する",
+        "対象がワンレックか確認し、梱包を実施する",
+        (
+            "対象：①即出荷後にLPN分割を実施しなかった場合\n\n"
+            "・ワンレックの場合\n"
+            "　→国内梱包（ワンレック）を実施する\n"
+            "・複数レックの場合\n"
+            "　→国内梱包（複数レック）を実施し、\n"
+            "　　イレギュラー置場へ移動する"
+        ),
+        s_text="複数レックの場合、全レック分を移動したか確認する",
         s_reason="一部レックの移動漏れによる出荷遅延防止",
         q_text="梱包指示書のレック数と現物のレック数が一致しているか確認する",
         q_reason="梱包誤り防止",
-        fill=FILL_CASE["13"],
     )
     row += 12
 
-    # ── 手順17: ③分割ラベル使用 ───────────────────
+    # ── 手順17: 分割ラベル使用（③過剰分割）──────────────────────
     build_step(
         ws, row, "17",
-        "【③対応】分割ラベルを使用する\n\n"
-        "LPN分割を過剰に行った場合、余分に発行されたラベルは"
-        "「分割ラベル」として保管し、該当LPNに使用する。",
-        "余分に発行したラベルは捨てずに保管箱へ入れること。",
-        s_text="誤って別LPNに分割ラベルを貼付しないよう、"
-               "ラベルのLPN番号を必ず確認する",
+        "分割ラベルを使用する",
+        (
+            "対象：③LPN分割を過剰に行った場合\n\n"
+            "余分に発行されたラベルは「分割ラベル」として\n"
+            "保管し、該当LPNに使用する。\n"
+            "余分なラベルは捨てずに保管箱へ入れること。"
+        ),
+        s_text="別LPNへの誤貼付防止のため、ラベルのLPN番号を必ず確認する",
         s_reason="誤出荷・誤集約防止",
-        fill=FILL_CASE["14"],
     )
     row += 12
 
-    # ── 手順18: ④親部材集約 ───────────────────────
+    # ── 手順18: 親部材集約（④中断）──────────────────────────────
     build_step(
         ws, row, "18",
-        "【④対応】親部材集約を実施する\n\n"
-        "複数部材のLPN分割作業を中断した場合、未処理の部材を"
-        "親部材へ集約する。",
-        "中断したLPN分割作業のうち、未処理の部材のみを対象とする。",
+        "親部材集約を実施する",
+        (
+            "対象：④複数部材をLPN分割する途中で中断した場合\n\n"
+            "未処理の部材を親部材へ集約する。\n"
+            "中断したLPN分割作業のうち、\n"
+            "未処理の部材のみを対象とすること。"
+        ),
         q_text="集約後、親部材の数量が分割前の総数と一致しているか確認する",
         q_reason="数量誤り防止",
-        fill=FILL_CASE["15"],
     )
     row += 12
 
-    # ── 手順19: ⑤MAラベル再印刷 ───────────────────
+    # ── 手順19: MAラベル再印刷（⑤プリンタ未設定）───────────────
     build_step(
         ws, row, "19",
-        "【⑤対応】MAラベルを再印刷する\n\n"
-        "プリンタを設定しないままLPN分割を行った場合、正しい"
-        "プリンタを設定し、MAラベルを再印刷する。",
-        "再印刷前に旧ラベルを必ず破棄すること。",
+        "MAラベルを再印刷する",
+        (
+            "対象：⑤プリンタを設定しないままLPN分割した場合\n\n"
+            "正しいプリンタを設定し、MAラベルを再印刷する。\n"
+            "再印刷前に旧ラベルを必ず破棄すること。"
+        ),
         s_text="再印刷前に旧ラベルを破棄し、二重貼付を防止する",
         s_reason="二重貼付による誤出荷防止",
-        fill=FILL_CASE["16"],
     )
 
     wb.save(OUTPUT_FILE)
     print(f"作成完了: {OUTPUT_FILE}")
+    print("書き方ルール:")
+    print("  フォント: HGP創英角ゴシックUB (本文24pt/補足16pt/急所14pt)")
+    print("  分岐: 「○○の場合→手順【N】へ」形式で文章記述")
+    print("  色: 白黒（色付けなし）")
 
 
 if __name__ == "__main__":
