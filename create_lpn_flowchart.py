@@ -1,144 +1,236 @@
 """
-LPN分割 誤り対応フロー図 生成スクリプト
-
-手書きメモの内容をもとに、5パターンの場合分けを1枚のフローチャート(PNG)
-として作成し、Excel(xlsx)にも貼り付けて出力する。
-
-使用方法:
-    python create_lpn_flowchart.py
-    → LPN分割_誤り対応フロー図.png
-    → LPN分割_誤り対応フロー図.xlsx
+LPN分割 誤り対応 フローチャート（標準記号版）
+  ○ : 開始 / 終了
+  ◇ : 分岐（判断）
+  □ : 処理（アクション）
 """
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import matplotlib.font_manager as fm
-from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
-from openpyxl import Workbook
-from openpyxl.drawing.image import Image as XLImage
+import numpy as np
 
-# ── 日本語フォント設定 ──────────────────────────
 JP_FONT_PATH = "/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf"
-jp_font = fm.FontProperties(fname=JP_FONT_PATH)
+FP = fm.FontProperties(fname=JP_FONT_PATH)
 
-PNG_FILE = "LPN分割_誤り対応フロー図.png"
+PNG_FILE  = "LPN分割_誤り対応フロー図.png"
 XLSX_FILE = "LPN分割_誤り対応フロー図.xlsx"
 
-# ── 色定義 ──────────────────────────────────────
-COLOR_START    = "#FFF2CC"  # 黄: 発生事象（開始）
-COLOR_DECISION = "#FCE4D6"  # 橙: 判定
-COLOR_ACTION   = "#DDEBF7"  # 青: 対応アクション
-COLOR_WARN     = "#F8CBAD"  # 赤橙: 注記
+# ── 色 ──────────────────────────────────────────
+C_START  = "white"
+C_CASE   = "white"
+C_DEC    = "#FFF2CC"
+C_ACT    = "#DDEBF7"
+C_EDGE   = "black"
+C_ARROW  = "black"
+C_YES    = "#007700"
+C_NO     = "#CC0000"
 
 
-def box(ax, xy, w, h, text, color, fontsize=11, shape="rect"):
-    x, y = xy
-    if shape == "diamond":
-        boxstyle = "round,pad=0.02,rounding_size=0.15"
+def txt(ax, x, y, s, size=11, bold=False, color="black", ha="center", va="center"):
+    weight = "bold" if bold else "normal"
+    ax.text(x, y, s, ha=ha, va=va,
+            fontproperties=FP, fontsize=size, fontweight=weight, color=color)
+
+
+# ── 図形描画 ─────────────────────────────────────
+def oval(ax, cx, cy, rw, rh, text, fsize=10.5, fc=C_START):
+    """開始／終了: 楕円○"""
+    e = mpatches.Ellipse((cx, cy), rw * 2, rh * 2,
+                          facecolor=fc, edgecolor=C_EDGE, linewidth=1.5, zorder=3)
+    ax.add_patch(e)
+    txt(ax, cx, cy, text, size=fsize, bold=True)
+    return dict(cx=cx, cy=cy, rw=rw, rh=rh, kind="oval")
+
+
+def rect(ax, cx, cy, hw, hh, text, fsize=10.5, fc=C_ACT):
+    """処理: 四角□"""
+    p = mpatches.FancyBboxPatch((cx - hw, cy - hh), hw * 2, hh * 2,
+                                  boxstyle="round,pad=0.02,rounding_size=0.06",
+                                  facecolor=fc, edgecolor=C_EDGE, linewidth=1.5, zorder=3)
+    ax.add_patch(p)
+    txt(ax, cx, cy, text, size=fsize)
+    return dict(cx=cx, cy=cy, hw=hw, hh=hh, kind="rect")
+
+
+def case_box(ax, cx, cy, hw, hh, text, fsize=10.0, fc=C_CASE):
+    """ケース入口: 角丸四角（やや丸め）"""
+    p = mpatches.FancyBboxPatch((cx - hw, cy - hh), hw * 2, hh * 2,
+                                  boxstyle="round,pad=0.04,rounding_size=0.18",
+                                  facecolor=fc, edgecolor=C_EDGE, linewidth=1.5,
+                                  linestyle="dashed", zorder=3)
+    ax.add_patch(p)
+    txt(ax, cx, cy, text, size=fsize)
+    return dict(cx=cx, cy=cy, hw=hw, hh=hh, kind="rect")
+
+
+def diamond(ax, cx, cy, hw, hh, text, fsize=10.5, fc=C_DEC):
+    """分岐: ひし形◇"""
+    pts = np.array([[cx, cy + hh], [cx + hw, cy],
+                    [cx, cy - hh], [cx - hw, cy]])
+    poly = mpatches.Polygon(pts, closed=True,
+                             facecolor=fc, edgecolor=C_EDGE, linewidth=1.5, zorder=3)
+    ax.add_patch(poly)
+    txt(ax, cx, cy, text, size=fsize)
+    return dict(cx=cx, cy=cy, hw=hw, hh=hh, kind="diamond")
+
+
+def edge_pt(shape, direction):
+    """図形のエッジ座標（接続点）を返す"""
+    cx, cy = shape["cx"], shape["cy"]
+    if shape["kind"] == "oval":
+        rw, rh = shape["rw"], shape["rh"]
+        return {"top":(cx,cy+rh),"bottom":(cx,cy-rh),
+                "left":(cx-rw,cy),"right":(cx+rw,cy)}[direction]
+    elif shape["kind"] == "rect":
+        hw, hh = shape["hw"], shape["hh"]
+        return {"top":(cx,cy+hh),"bottom":(cx,cy-hh),
+                "left":(cx-hw,cy),"right":(cx+hw,cy)}[direction]
+    elif shape["kind"] == "diamond":
+        hw, hh = shape["hw"], shape["hh"]
+        return {"top":(cx,cy+hh),"bottom":(cx,cy-hh),
+                "left":(cx-hw,cy),"right":(cx+hw,cy)}[direction]
+
+
+def arrow(ax, p1, p2, label=None, lc=C_ARROW, via=None):
+    """矢印描画。via=(x,y) で折れ線"""
+    style = dict(arrowstyle="-|>", mutation_scale=14, color=lc, linewidth=1.4)
+    if via:
+        ax.annotate("", xy=via, xytext=p1,
+                    arrowprops=dict(arrowstyle="-", color=lc, linewidth=1.4))
+        ax.annotate("", xy=p2,  xytext=via,
+                    arrowprops=dict(**style))
     else:
-        boxstyle = "round,pad=0.02,rounding_size=0.08"
-    patch = FancyBboxPatch(
-        (x, y), w, h,
-        boxstyle=boxstyle,
-        linewidth=1.3,
-        edgecolor="#404040",
-        facecolor=color,
-    )
-    ax.add_patch(patch)
-    ax.text(x + w / 2, y + h / 2, text, ha="center", va="center",
-            fontproperties=jp_font, fontsize=fontsize, wrap=True)
-    return (x, y, w, h)
-
-
-def arrow(ax, p1, p2, label=None, label_pos=0.5, color="#404040", rad=0.0):
-    connectionstyle = f"arc3,rad={rad}" if rad else "arc3"
-    a = FancyArrowPatch(p1, p2, arrowstyle="-|>", mutation_scale=14,
-                         linewidth=1.3, color=color,
-                         connectionstyle=connectionstyle)
-    ax.add_patch(a)
+        ax.annotate("", xy=p2, xytext=p1,
+                    arrowprops=dict(**style))
     if label:
-        lx = p1[0] + (p2[0] - p1[0]) * label_pos
-        ly = p1[1] + (p2[1] - p1[1]) * label_pos
-        if rad:
-            ly += rad * 1.5
-        ax.text(lx, ly, label, ha="center", va="center",
-                fontproperties=jp_font, fontsize=10, color="#C00000",
-                bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none"))
+        mx = (p1[0] + (via[0] if via else p2[0])) / 2
+        my = (p1[1] + (via[1] if via else p2[1])) / 2
+        ax.text(mx + 0.08, my, label, ha="left", va="center",
+                fontproperties=FP, fontsize=10.5, color=lc,
+                fontweight="bold",
+                bbox=dict(fc="white", ec="none", pad=1))
 
 
+# ── メイン ──────────────────────────────────────
 def main():
-    fig, ax = plt.subplots(figsize=(15, 11))
-    ax.set_xlim(0, 15)
-    ax.set_ylim(0, 11)
+    fig, ax = plt.subplots(figsize=(14, 11))
+    ax.set_xlim(0, 14)
+    ax.set_ylim(-0.6, 11)
     ax.axis("off")
+    fig.suptitle("LPN分割 誤り対応フロー", fontproperties=FP, fontsize=15,
+                  fontweight="bold", y=0.97)
 
-    fig.suptitle("LPN分割 誤り対応フロー（重長品検数作業 例外処理）",
-                  fontproperties=jp_font, fontsize=16, y=0.985)
+    # ════════════════════════════════════════
+    # ① LPN分割を忘れて即出荷
+    # ════════════════════════════════════════
+    s1  = oval(ax,  1.1, 10.2, 0.35, 0.28, "開始", fsize=10)
+    c1  = case_box(ax, 1.7, 9.5, 1.3, 0.38,
+                   "①LPN分割を忘れて\n即出荷してしまった", fsize=9.5)
+    d1  = diamond(ax, 4.5, 9.5, 1.5, 0.45,
+                  "即出荷後に\nLPN分割したか？", fsize=10)
+    act_olpn = rect(ax, 8.5, 10.2, 1.6, 0.38, "OLPNを統合する", fc=C_ACT)
+    e1  = oval(ax, 11.0, 10.2, 0.35, 0.28, "終了", fsize=10)
 
-    # ── ① の流れ ─────────────────────────────────
-    b1 = box(ax, (0.3, 8.6), 3.0, 1.2,
-             "①LPN分割を忘れて\n即出荷してしまった", COLOR_START)
-    b2 = box(ax, (3.9, 8.6), 3.2, 1.2,
-             "即出荷後に\nLPN分割したか？", COLOR_DECISION, shape="diamond")
-    b3 = box(ax, (8.2, 9.3), 2.6, 1.0, "OLPN統合", COLOR_ACTION)
-    b4 = box(ax, (8.2, 6.5), 3.2, 1.2,
-             "ワンレックか？\n複数レックか？", COLOR_DECISION, shape="diamond")
-    b5 = box(ax, (12.0, 7.4), 2.7, 1.0, "国内梱包\n（ワンレック）", COLOR_ACTION)
-    b6 = box(ax, (12.0, 5.6), 2.7, 1.6,
-             "国内梱包（複数レック）\n＋イレギュラー置場\n（相当分の周知が必要）", COLOR_WARN, fontsize=9.5)
+    d2  = diamond(ax, 6.8, 8.5, 1.4, 0.45,
+                  "ワンレックか？\n複数レックか？", fsize=10)
+    act_w1 = rect(ax, 10.2, 9.2, 1.7, 0.38, "国内梱包\n（ワンレック）", fc=C_ACT)
+    e_w1   = oval(ax, 12.8, 9.2, 0.35, 0.28, "終了", fsize=10)
+    act_w2 = rect(ax, 10.2, 7.9, 1.7, 0.50,
+                  "国内梱包（複数レック）\n＋イレギュラー置場へ", fc=C_ACT, fsize=9.5)
+    e_w2   = oval(ax, 12.8, 7.9, 0.35, 0.28, "終了", fsize=10)
 
-    arrow(ax, (3.3, 9.2), (3.9, 9.2))
-    arrow(ax, (7.1, 9.4), (8.2, 9.7), label="YES", label_pos=0.5)
-    arrow(ax, (5.5, 8.6), (5.5, 7.7))
-    arrow(ax, (5.5, 7.7), (8.2, 7.3), label="NO")
-    arrow(ax, (11.4, 7.5), (12.0, 7.8), label="ワンレック")
-    arrow(ax, (9.8, 6.5), (12.0, 6.3), label="複数レック")
+    arrow(ax, edge_pt(s1,"bottom"), edge_pt(c1,"top"))
+    arrow(ax, edge_pt(c1,"right"),  edge_pt(d1,"left"))
+    arrow(ax, edge_pt(d1,"top"),    edge_pt(act_olpn,"left"),
+          label="YES", lc=C_YES, via=(4.5, 10.2))
+    arrow(ax, edge_pt(act_olpn,"right"), edge_pt(e1,"left"))
 
-    # ── ② の流れ ─────────────────────────────────
-    b7 = box(ax, (0.3, 6.6), 3.0, 1.2,
-             "②LPN分割で数量を\n誤ってしまった", COLOR_START)
-    arrow(ax, (1.8, 8.6), (1.8, 7.8))
-    arrow(ax, (3.3, 6.9), (8.2, 9.55), label="OLPN統合へ", label_pos=0.5, rad=-0.35)
+    arrow(ax, edge_pt(d1,"right"),  edge_pt(d2,"left"),  label="NO",  lc=C_NO)
+    arrow(ax, edge_pt(d2,"top"),    edge_pt(act_w1,"left"),
+          label="ワンレック", lc=C_YES, via=(6.8, 9.2))
+    arrow(ax, edge_pt(act_w1,"right"), edge_pt(e_w1,"left"))
+    arrow(ax, edge_pt(d2,"bottom"), edge_pt(act_w2,"left"),
+          label="複数レック", lc=C_NO, via=(6.8, 7.9))
+    arrow(ax, edge_pt(act_w2,"right"), edge_pt(e_w2,"left"))
 
-    # ── ③ の流れ ─────────────────────────────────
-    b8 = box(ax, (0.3, 4.4), 3.0, 1.2,
-             "③LPN分割を\n過剰に行った", COLOR_START)
-    b9 = box(ax, (3.9, 4.4), 3.0, 1.2, "分割ラベルを\n使用する", COLOR_ACTION)
-    arrow(ax, (3.3, 5.0), (3.9, 5.0))
+    # ════════════════════════════════════════
+    # ② LPN分割で数量を誤った → OLPN統合
+    # ════════════════════════════════════════
+    s2     = oval(ax, 1.1, 7.0, 0.35, 0.28, "開始", fsize=10)
+    c2     = case_box(ax, 1.7, 7.0, 1.3, 0.38,
+                      "②LPN分割で\n数量を誤った", fsize=9.5)
+    act2   = rect(ax, 5.5, 7.0, 1.7, 0.38, "OLPNを統合する", fc=C_ACT)
+    e2     = oval(ax, 8.2, 7.0, 0.35, 0.28, "終了", fsize=10)
 
-    # ── ④ の流れ ─────────────────────────────────
-    b10 = box(ax, (0.3, 2.2), 3.0, 1.4,
-              "④複数部材をLPN分割する\n途中で中断した", COLOR_START)
-    b11 = box(ax, (3.9, 2.4), 3.0, 1.0, "親部材集約", COLOR_ACTION)
-    arrow(ax, (3.3, 2.9), (3.9, 2.9))
+    arrow(ax, edge_pt(s2,"bottom"), edge_pt(c2,"top"))
+    arrow(ax, edge_pt(c2,"right"),  edge_pt(act2,"left"))
+    arrow(ax, edge_pt(act2,"right"),edge_pt(e2,"left"))
 
-    # ── ⑤ の流れ ─────────────────────────────────
-    b12 = box(ax, (0.3, 0.3), 3.4, 1.4,
-              "⑤プリンタを設定しない\nままLPN分割した", COLOR_START)
-    b13 = box(ax, (3.9, 0.5), 3.0, 1.0, "MAラベルを\n再印刷する", COLOR_ACTION)
-    arrow(ax, (3.7, 1.0), (3.9, 1.0))
+    # ════════════════════════════════════════
+    # ③ LPN分割を過剰に行った
+    # ════════════════════════════════════════
+    s3  = oval(ax, 1.1, 5.4, 0.35, 0.28, "開始", fsize=10)
+    c3  = case_box(ax, 1.7, 5.4, 1.3, 0.38,
+                   "③LPN分割を\n過剰に行った", fsize=9.5)
+    act3= rect(ax, 5.5, 5.4, 1.7, 0.38, "分割ラベルを\n使用する", fc=C_ACT)
+    e3  = oval(ax, 8.2, 5.4, 0.35, 0.28, "終了", fsize=10)
 
-    # ── 凡例 ─────────────────────────────────────
-    legend_y = 0.0
-    box(ax, (8.2, 3.4), 1.5, 0.6, "発生事象", COLOR_START, fontsize=9)
-    box(ax, (9.9, 3.4), 1.5, 0.6, "判定", COLOR_DECISION, fontsize=9)
-    box(ax, (11.6, 3.4), 1.5, 0.6, "対応", COLOR_ACTION, fontsize=9)
-    box(ax, (13.3, 3.4), 1.5, 0.6, "注記", COLOR_WARN, fontsize=9)
+    arrow(ax, edge_pt(s3,"bottom"), edge_pt(c3,"top"))
+    arrow(ax, edge_pt(c3,"right"),  edge_pt(act3,"left"))
+    arrow(ax, edge_pt(act3,"right"),edge_pt(e3,"left"))
 
-    plt.tight_layout()
+    # ════════════════════════════════════════
+    # ④ 複数部材LPN分割を中断した
+    # ════════════════════════════════════════
+    s4  = oval(ax, 1.1, 3.8, 0.35, 0.28, "開始", fsize=10)
+    c4  = case_box(ax, 1.7, 3.8, 1.3, 0.50,
+                   "④複数部材のLPN分割を\n途中で中断した", fsize=9.0)
+    act4= rect(ax, 5.5, 3.8, 1.7, 0.38, "親部材集約を\n実施する", fc=C_ACT)
+    e4  = oval(ax, 8.2, 3.8, 0.35, 0.28, "終了", fsize=10)
+
+    arrow(ax, edge_pt(s4,"bottom"), edge_pt(c4,"top"))
+    arrow(ax, edge_pt(c4,"right"),  edge_pt(act4,"left"))
+    arrow(ax, edge_pt(act4,"right"),edge_pt(e4,"left"))
+
+    # ════════════════════════════════════════
+    # ⑤ プリンタ未設定のままLPN分割
+    # ════════════════════════════════════════
+    s5  = oval(ax, 1.1, 2.2, 0.35, 0.28, "開始", fsize=10)
+    c5  = case_box(ax, 1.7, 2.2, 1.3, 0.50,
+                   "⑤プリンタを設定しない\nままLPN分割した", fsize=9.0)
+    act5= rect(ax, 5.5, 2.2, 1.7, 0.38, "MAラベルを\n再印刷する", fc=C_ACT)
+    e5  = oval(ax, 8.2, 2.2, 0.35, 0.28, "終了", fsize=10)
+
+    arrow(ax, edge_pt(s5,"bottom"), edge_pt(c5,"top"))
+    arrow(ax, edge_pt(c5,"right"),  edge_pt(act5,"left"))
+    arrow(ax, edge_pt(act5,"right"),edge_pt(e5,"left"))
+
+    # ── 凡例 ────────────────────────────────
+    lx, ly = 0.3, 0.8
+    oval(ax,  lx+0.4,  ly, 0.28, 0.22, "開始/終了", fsize=9)
+    rect(ax,  lx+2.2,  ly, 0.7,  0.22, "処理 □", fsize=9, fc=C_ACT)
+    diamond(ax,lx+4.0, ly, 0.8,  0.30, "分岐 ◇", fsize=9, fc=C_DEC)
+    case_box(ax,lx+6.0,ly, 0.8,  0.22, "発生事象", fsize=9, fc=C_CASE)
+
+    ax.axhline(1.35, color="#aaaaaa", linewidth=0.8, linestyle="--")
+
+    plt.tight_layout(rect=[0, 0.02, 1, 0.97])
     fig.savefig(PNG_FILE, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"作成完了: {PNG_FILE}")
 
-    # ── Excelに貼り付け ───────────────────────────
+    # ── Excelにも貼付 ───────────────────────
+    from openpyxl import Workbook
+    from openpyxl.drawing.image import Image as XLImage
     wb = Workbook()
     ws = wb.active
-    ws.title = "誤り対応フロー図"
+    ws.title = "LPN分割誤り対応フロー"
     img = XLImage(PNG_FILE)
-    # 画像が大きすぎる場合は縮小
     scale = 1400 / img.width
-    img.width = int(img.width * scale)
+    img.width  = int(img.width  * scale)
     img.height = int(img.height * scale)
     ws.add_image(img, "A1")
     wb.save(XLSX_FILE)
