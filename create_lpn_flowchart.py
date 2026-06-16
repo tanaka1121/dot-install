@@ -12,7 +12,15 @@ import zipfile, io, re
 from openpyxl import Workbook
 
 OUTPUT = "LPN分割_誤り対応フロー図.xlsx"
-CM = 360000   # 1cm → EMU
+CM = 360000    # 1cm → EMU
+
+# ── セルグリッド定義（列幅・行高を固定して col/row を正確に計算）─────────
+# openpyxl で width=10 を設定したときの列幅 EMU
+# 計算式: int((int((10*7+5)/7)*7)*9525) = int(70*9525) = 666750
+COL_W  = 10       # openpyxl 列幅 (文字数)
+COL_EMU = 666750  # 列1本の幅 (EMU)
+ROW_H   = 20      # openpyxl 行高 (pt)
+ROW_EMU = 254000  # 行1本の高さ (EMU) = 20pt * 12700
 
 # ── 色 ──────────────────────────────────────────────────────────────
 START_FILL = "BDD7EE"   # 角丸四角（開始）薄青
@@ -38,12 +46,22 @@ def next_id():
     return _sid[0]
 
 
-def _anchor(x, y, w, h, inner_xml):
-    """oneCellAnchor wrapper"""
+def _anchor(x_cm, y_cm, w_emu, h_emu, inner_xml):
+    """
+    x_cm, y_cm: シート左上からの位置 (cm)
+    w_emu, h_emu: 図形サイズ (EMU)
+    col/row を COL_EMU/ROW_EMU で割り算して正しいセル位置を算出する
+    """
+    x_emu = int(x_cm * CM)
+    y_emu = int(y_cm * CM)
+    col,     col_off = divmod(x_emu, COL_EMU)
+    row,     row_off = divmod(y_emu, ROW_EMU)
     return f"""<xdr:oneCellAnchor>
-  <xdr:from><xdr:col>0</xdr:col><xdr:colOff>{x}</xdr:colOff>
-             <xdr:row>0</xdr:row><xdr:rowOff>{y}</xdr:rowOff></xdr:from>
-  <xdr:ext cx="{w}" cy="{h}"/>
+  <xdr:from>
+    <xdr:col>{col}</xdr:col><xdr:colOff>{col_off}</xdr:colOff>
+    <xdr:row>{row}</xdr:row><xdr:rowOff>{row_off}</xdr:rowOff>
+  </xdr:from>
+  <xdr:ext cx="{w_emu}" cy="{h_emu}"/>
   {inner_xml}
   <xdr:clientData/>
 </xdr:oneCellAnchor>"""
@@ -64,8 +82,11 @@ def _text_paras(lines, sz, bold=False, color="000000"):
 
 def shape(x, y, w, h, text, prst, fill, adj=None,
           dashed=False, font_sz=1000, bold=False, line_w=25400):
-    """図形 XML を返す (oneCellAnchor)"""
+    """
+    x,y: 左上位置 (cm), w,h: サイズ (cm)
+    """
     sid = next_id()
+    w_emu, h_emu = e(w), e(h)
     adj_xml = f'<a:avLst><a:gd name="adj" fmla="val {adj}"/></a:avLst>' if adj else "<a:avLst/>"
     dash_xml = '<a:prstDash val="dash"/>' if dashed else ""
     lines = text.split("\n")
@@ -76,7 +97,7 @@ def shape(x, y, w, h, text, prst, fill, adj=None,
     <xdr:cNvSpPr><a:spLocks noGrp="1"/></xdr:cNvSpPr>
   </xdr:nvSpPr>
   <xdr:spPr>
-    <a:xfrm><a:off x="0" y="0"/><a:ext cx="{w}" cy="{h}"/></a:xfrm>
+    <a:xfrm><a:off x="0" y="0"/><a:ext cx="{w_emu}" cy="{h_emu}"/></a:xfrm>
     <a:prstGeom prst="{prst}">{adj_xml}</a:prstGeom>
     <a:solidFill><a:srgbClr val="{fill}"/></a:solidFill>
     <a:ln w="{line_w}"><a:solidFill><a:srgbClr val="{LINE_COL}"/></a:solidFill>{dash_xml}</a:ln>
@@ -87,21 +108,21 @@ def shape(x, y, w, h, text, prst, fill, adj=None,
     {paras}
   </xdr:txBody>
 </xdr:sp>"""
-    return _anchor(x, y, w, h, inner)
+    return _anchor(x, y, w_emu, h_emu, inner)
 
 
 def connector(x1, y1, x2, y2):
-    """矢印付き直線コネクタ (straightConnector1)"""
+    """矢印付き直線コネクタ (cm座標)"""
     sid = next_id()
-    dx, dy = x2 - x1, y2 - y1
+    dx_emu = int((x2 - x1) * CM)
+    dy_emu = int((y2 - y1) * CM)
     flip = ""
-    # bounding box top-left + extents
-    bx = min(x1, x2)
-    by = min(y1, y2)
-    cx_ = max(abs(dx), 9525)   # 最小 1px
-    cy_ = max(abs(dy), 9525)
-    if dx < 0:  flip += ' flipH="1"'
-    if dy < 0:  flip += ' flipV="1"'
+    bx_cm = min(x1, x2)
+    by_cm = min(y1, y2)
+    cx_ = max(abs(dx_emu), 9525)
+    cy_ = max(abs(dy_emu), 9525)
+    if dx_emu < 0: flip += ' flipH="1"'
+    if dy_emu < 0: flip += ' flipV="1"'
     inner = f"""<xdr:cxnSp macro="">
   <xdr:nvCxnSpPr>
     <xdr:cNvPr id="{sid}" name="Conn{sid}"/>
@@ -116,12 +137,13 @@ def connector(x1, y1, x2, y2):
     </a:ln>
   </xdr:spPr>
 </xdr:cxnSp>"""
-    return _anchor(bx, by, cx_, cy_, inner)
+    return _anchor(bx_cm, by_cm, cx_, cy_, inner)
 
 
 def label(x, y, w, h, text, color=YES_COL):
-    """YES/NO ラベル用テキストボックス"""
+    """YES/NO ラベル (cm 座標)"""
     sid = next_id()
+    w_emu, h_emu = e(w), e(h)
     paras = _text_paras([text], sz=900, bold=True, color=color)
     inner = f"""<xdr:sp macro="" textlink="">
   <xdr:nvSpPr>
@@ -129,7 +151,7 @@ def label(x, y, w, h, text, color=YES_COL):
     <xdr:cNvSpPr txBox="1"><a:spLocks noGrp="1"/></xdr:cNvSpPr>
   </xdr:nvSpPr>
   <xdr:spPr>
-    <a:xfrm><a:off x="0" y="0"/><a:ext cx="{w}" cy="{h}"/></a:xfrm>
+    <a:xfrm><a:off x="0" y="0"/><a:ext cx="{w_emu}" cy="{h_emu}"/></a:xfrm>
     <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
     <a:noFill/>
     <a:ln><a:noFill/></a:ln>
@@ -140,19 +162,20 @@ def label(x, y, w, h, text, color=YES_COL):
     {paras}
   </xdr:txBody>
 </xdr:sp>"""
-    return _anchor(x, y, w, h, inner)
+    return _anchor(x, y, w_emu, h_emu, inner)
 
 
-def separator(y):
-    """シナリオ間の区切り横線"""
+def separator(y_cm):
+    """シナリオ間の区切り横線 (cm座標)"""
     sid = next_id()
+    w_emu = e(13.5)
     inner = f"""<xdr:cxnSp macro="">
   <xdr:nvCxnSpPr>
     <xdr:cNvPr id="{sid}" name="Sep{sid}"/>
     <xdr:cNvCxnSpPr/>
   </xdr:nvCxnSpPr>
   <xdr:spPr>
-    <a:xfrm><a:off x="0" y="0"/><a:ext cx="{e(13)}" cy="{9525}"/></a:xfrm>
+    <a:xfrm><a:off x="0" y="0"/><a:ext cx="{w_emu}" cy="{9525}"/></a:xfrm>
     <a:prstGeom prst="straightConnector1"><a:avLst/></a:prstGeom>
     <a:ln w="9525" cmpd="sng">
       <a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill>
@@ -160,7 +183,7 @@ def separator(y):
     </a:ln>
   </xdr:spPr>
 </xdr:cxnSp>"""
-    return _anchor(e(0.3), y, e(13), 9525, inner)
+    return _anchor(0.3, y_cm, w_emu, 9525, inner)
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -169,11 +192,11 @@ def separator(y):
 def build_drawing():
     parts = []
 
-    # ── ショートカット ──────────────────────────────────────────────
-    def S(x, y, w, h, txt, **kw):   return shape(e(x),e(y),e(w),e(h),txt,**kw)
-    def C(x1,y1,x2,y2):             return connector(e(x1),e(y1),e(x2),e(y2))
-    def L(x,y,w,h,txt,col=YES_COL): return label(e(x),e(y),e(w),e(h),txt,col)
-    def SEP(y):                      return separator(e(y))
+    # ── ショートカット (すべて cm 単位) ────────────────────────────
+    def S(x, y, w, h, txt, **kw):   return shape(x, y, w, h, txt, **kw)
+    def C(x1,y1,x2,y2):             return connector(x1,y1,x2,y2)
+    def L(x,y,w,h,txt,col=YES_COL): return label(x, y, w, h, txt, col)
+    def SEP(y):                      return separator(y)
 
     # ════════════════════════════════════════════════════════════════
     # ① LPN分割を忘れて即出荷してしまった
@@ -375,13 +398,20 @@ def patch_xlsx(wb, drawing_xml: str, output_path: str):
 
 
 def main():
+    from openpyxl.styles import Font
+    from openpyxl.utils import get_column_letter
     wb = Workbook()
     ws = wb.active
     ws.title = "LPN分割誤り対応フロー"
+
+    # ── 列幅・行高を固定（COL_EMU/ROW_EMU と一致させる）────────────
+    for i in range(1, 22):   # 列 A〜U (21列)
+        ws.column_dimensions[get_column_letter(i)].width = COL_W   # = 10
+    for i in range(1, 60):   # 行 1〜59
+        ws.row_dimensions[i].height = ROW_H                         # = 20pt
+
     ws["A1"] = "LPN分割 誤り対応フロー図"
-    ws["A1"].font = __import__("openpyxl").styles.Font(
-        name="HGP創英角ｺﾞｼｯｸUB", size=16, bold=True)
-    ws.row_dimensions[1].height = 20
+    ws["A1"].font = Font(name="HGP創英角ｺﾞｼｯｸUB", size=16, bold=True)
 
     drawing_xml = build_drawing()
     patch_xlsx(wb, drawing_xml, OUTPUT)
