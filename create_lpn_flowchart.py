@@ -329,9 +329,15 @@ def patch_xlsx(wb, drawing_xml: str, output_path: str):
                 text = text.replace("</Types>", insert + "</Types>")
                 data = text.encode("utf-8")
 
-            # ワークシート XML に <drawing> 参照を追加
+            # ワークシート XML に r: 名前空間 + <drawing> 参照を追加
             elif name == "xl/worksheets/sheet1.xml":
                 text = data.decode("utf-8")
+                # r: 名前空間が未宣言なら <worksheet> タグに追加
+                R_NS = 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+                if R_NS not in text:
+                    text = text.replace("<worksheet ", f"<worksheet {R_NS} ", 1)
+                    if "<worksheet " not in text:  # 属性なしの場合
+                        text = text.replace("<worksheet>", f"<worksheet {R_NS}>", 1)
                 drawing_ref = f'<drawing r:id="{SHEET_REL_ID}"/>'
                 if drawing_ref not in text:
                     text = text.replace("</worksheet>", drawing_ref + "</worksheet>")
