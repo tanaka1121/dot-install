@@ -1,240 +1,386 @@
 """
-LPN分割 誤り対応 フローチャート（標準記号版）
-  ○ : 開始 / 終了
-  ◇ : 分岐（判断）
-  □ : 処理（アクション）
+LPN分割 誤り対応フロー図 - Excel ネイティブ図形版
+  ・開始  : 角丸四角形 (roundRect, 高丸め) ← 楕円□
+  ・分岐  : ひし形 (diamond) ◇
+  ・処理  : 四角形 (rect) □
+  ・発生事象: 角丸四角形・点線枠
+  ・終了ノードなし
+  ・すべての図形が Excel 上で直接編集可能
 """
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import matplotlib.font_manager as fm
-import numpy as np
+import zipfile, io, re
+from openpyxl import Workbook
 
-JP_FONT_PATH = "/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf"
-FP = fm.FontProperties(fname=JP_FONT_PATH)
+OUTPUT = "LPN分割_誤り対応フロー図.xlsx"
+CM = 360000   # 1cm → EMU
 
-PNG_FILE  = "LPN分割_誤り対応フロー図.png"
-XLSX_FILE = "LPN分割_誤り対応フロー図.xlsx"
-
-# ── 色 ──────────────────────────────────────────
-C_START  = "white"
-C_CASE   = "white"
-C_DEC    = "#FFF2CC"
-C_ACT    = "#DDEBF7"
-C_EDGE   = "black"
-C_ARROW  = "black"
-C_YES    = "#007700"
-C_NO     = "#CC0000"
+# ── 色 ──────────────────────────────────────────────────────────────
+START_FILL = "BDD7EE"   # 角丸四角（開始）薄青
+DEC_FILL   = "FFE699"   # ひし形（分岐）
+ACT_FILL   = "DEEAF1"   # 四角（処理）
+CASE_FILL  = "FFFFFF"   # 発生事象（白・点線）
+LINE_COL   = "44546A"   # 罫線・矢印
+YES_COL    = "375623"   # YES ラベル
+NO_COL     = "9C0006"   # NO ラベル
 
 
-def txt(ax, x, y, s, size=11, bold=False, color="black", ha="center", va="center"):
-    weight = "bold" if bold else "normal"
-    ax.text(x, y, s, ha=ha, va=va,
-            fontproperties=FP, fontsize=size, fontweight=weight, color=color)
+def e(v): return int(v * CM)          # cm → EMU
+def ep(*v): return tuple(e(x) for x in v)  # tuple convert
 
 
-# ── 図形描画 ─────────────────────────────────────
-def oval(ax, cx, cy, rw, rh, text, fsize=10.5, fc=C_START):
-    """開始／終了: 楕円○"""
-    e = mpatches.Ellipse((cx, cy), rw * 2, rh * 2,
-                          facecolor=fc, edgecolor=C_EDGE, linewidth=1.5, zorder=3)
-    ax.add_patch(e)
-    txt(ax, cx, cy, text, size=fsize, bold=True)
-    return dict(cx=cx, cy=cy, rw=rw, rh=rh, kind="oval")
+# ──────────────────────────────────────────────────────────────────────
+# XML パーツ生成
+# ──────────────────────────────────────────────────────────────────────
+_sid = [1]
+
+def next_id():
+    _sid[0] += 1
+    return _sid[0]
 
 
-def rect(ax, cx, cy, hw, hh, text, fsize=10.5, fc=C_ACT):
-    """処理: 四角□"""
-    p = mpatches.FancyBboxPatch((cx - hw, cy - hh), hw * 2, hh * 2,
-                                  boxstyle="round,pad=0.02,rounding_size=0.06",
-                                  facecolor=fc, edgecolor=C_EDGE, linewidth=1.5, zorder=3)
-    ax.add_patch(p)
-    txt(ax, cx, cy, text, size=fsize)
-    return dict(cx=cx, cy=cy, hw=hw, hh=hh, kind="rect")
+def _anchor(x, y, w, h, inner_xml):
+    """oneCellAnchor wrapper"""
+    return f"""<xdr:oneCellAnchor>
+  <xdr:from><xdr:col>0</xdr:col><xdr:colOff>{x}</xdr:colOff>
+             <xdr:row>0</xdr:row><xdr:rowOff>{y}</xdr:rowOff></xdr:from>
+  <xdr:ext cx="{w}" cy="{h}"/>
+  {inner_xml}
+  <xdr:clientData/>
+</xdr:oneCellAnchor>"""
 
 
-def case_box(ax, cx, cy, hw, hh, text, fsize=10.0, fc=C_CASE):
-    """ケース入口: 角丸四角（やや丸め）"""
-    p = mpatches.FancyBboxPatch((cx - hw, cy - hh), hw * 2, hh * 2,
-                                  boxstyle="round,pad=0.04,rounding_size=0.18",
-                                  facecolor=fc, edgecolor=C_EDGE, linewidth=1.5,
-                                  linestyle="dashed", zorder=3)
-    ax.add_patch(p)
-    txt(ax, cx, cy, text, size=fsize)
-    return dict(cx=cx, cy=cy, hw=hw, hh=hh, kind="rect")
+def _text_paras(lines, sz, bold=False, color="000000"):
+    b = "<a:b/>" if bold else ""
+    paras = []
+    for ln in lines:
+        paras.append(
+            f'<a:p><a:pPr algn="ctr"/>'
+            f'<a:r><a:rPr lang="ja-JP" sz="{sz}" dirty="0" b="{1 if bold else 0}">'
+            f'<a:solidFill><a:srgbClr val="{color}"/></a:solidFill></a:rPr>'
+            f'<a:t>{ln}</a:t></a:r></a:p>'
+        )
+    return "\n".join(paras)
 
 
-def diamond(ax, cx, cy, hw, hh, text, fsize=10.5, fc=C_DEC):
-    """分岐: ひし形◇"""
-    pts = np.array([[cx, cy + hh], [cx + hw, cy],
-                    [cx, cy - hh], [cx - hw, cy]])
-    poly = mpatches.Polygon(pts, closed=True,
-                             facecolor=fc, edgecolor=C_EDGE, linewidth=1.5, zorder=3)
-    ax.add_patch(poly)
-    txt(ax, cx, cy, text, size=fsize)
-    return dict(cx=cx, cy=cy, hw=hw, hh=hh, kind="diamond")
+def shape(x, y, w, h, text, prst, fill, adj=None,
+          dashed=False, font_sz=1000, bold=False, line_w=25400):
+    """図形 XML を返す (oneCellAnchor)"""
+    sid = next_id()
+    adj_xml = f'<a:avLst><a:gd name="adj" fmla="val {adj}"/></a:avLst>' if adj else "<a:avLst/>"
+    dash_xml = '<a:prstDash val="dash"/>' if dashed else ""
+    lines = text.split("\n")
+    paras = _text_paras(lines, font_sz, bold)
+    inner = f"""<xdr:sp macro="" textlink="">
+  <xdr:nvSpPr>
+    <xdr:cNvPr id="{sid}" name="Shape{sid}"/>
+    <xdr:cNvSpPr><a:spLocks noGrp="1"/></xdr:cNvSpPr>
+  </xdr:nvSpPr>
+  <xdr:spPr>
+    <a:xfrm><a:off x="0" y="0"/><a:ext cx="{w}" cy="{h}"/></a:xfrm>
+    <a:prstGeom prst="{prst}">{adj_xml}</a:prstGeom>
+    <a:solidFill><a:srgbClr val="{fill}"/></a:solidFill>
+    <a:ln w="{line_w}"><a:solidFill><a:srgbClr val="{LINE_COL}"/></a:solidFill>{dash_xml}</a:ln>
+  </xdr:spPr>
+  <xdr:txBody>
+    <a:bodyPr wrap="square" anchor="ctr"><a:normAutofit/></a:bodyPr>
+    <a:lstStyle/>
+    {paras}
+  </xdr:txBody>
+</xdr:sp>"""
+    return _anchor(x, y, w, h, inner)
 
 
-def edge_pt(shape, direction):
-    """図形のエッジ座標（接続点）を返す"""
-    cx, cy = shape["cx"], shape["cy"]
-    if shape["kind"] == "oval":
-        rw, rh = shape["rw"], shape["rh"]
-        return {"top":(cx,cy+rh),"bottom":(cx,cy-rh),
-                "left":(cx-rw,cy),"right":(cx+rw,cy)}[direction]
-    elif shape["kind"] == "rect":
-        hw, hh = shape["hw"], shape["hh"]
-        return {"top":(cx,cy+hh),"bottom":(cx,cy-hh),
-                "left":(cx-hw,cy),"right":(cx+hw,cy)}[direction]
-    elif shape["kind"] == "diamond":
-        hw, hh = shape["hw"], shape["hh"]
-        return {"top":(cx,cy+hh),"bottom":(cx,cy-hh),
-                "left":(cx-hw,cy),"right":(cx+hw,cy)}[direction]
+def connector(x1, y1, x2, y2):
+    """矢印付き直線コネクタ (straightConnector1)"""
+    sid = next_id()
+    dx, dy = x2 - x1, y2 - y1
+    flip = ""
+    # bounding box top-left + extents
+    bx = min(x1, x2)
+    by = min(y1, y2)
+    cx_ = max(abs(dx), 9525)   # 最小 1px
+    cy_ = max(abs(dy), 9525)
+    if dx < 0:  flip += ' flipH="1"'
+    if dy < 0:  flip += ' flipV="1"'
+    inner = f"""<xdr:cxnSp macro="">
+  <xdr:nvCxnSpPr>
+    <xdr:cNvPr id="{sid}" name="Conn{sid}"/>
+    <xdr:cNvCxnSpPr/>
+  </xdr:nvCxnSpPr>
+  <xdr:spPr>
+    <a:xfrm{flip}><a:off x="0" y="0"/><a:ext cx="{cx_}" cy="{cy_}"/></a:xfrm>
+    <a:prstGeom prst="straightConnector1"><a:avLst/></a:prstGeom>
+    <a:ln w="25400">
+      <a:solidFill><a:srgbClr val="{LINE_COL}"/></a:solidFill>
+      <a:tailEnd type="arrow" w="med" len="med"/>
+    </a:ln>
+  </xdr:spPr>
+</xdr:cxnSp>"""
+    return _anchor(bx, by, cx_, cy_, inner)
 
 
-def arrow(ax, p1, p2, label=None, lc=C_ARROW, via=None):
-    """矢印描画。via=(x,y) で折れ線"""
-    style = dict(arrowstyle="-|>", mutation_scale=14, color=lc, linewidth=1.4)
-    if via:
-        ax.annotate("", xy=via, xytext=p1,
-                    arrowprops=dict(arrowstyle="-", color=lc, linewidth=1.4))
-        ax.annotate("", xy=p2,  xytext=via,
-                    arrowprops=dict(**style))
-    else:
-        ax.annotate("", xy=p2, xytext=p1,
-                    arrowprops=dict(**style))
-    if label:
-        mx = (p1[0] + (via[0] if via else p2[0])) / 2
-        my = (p1[1] + (via[1] if via else p2[1])) / 2
-        ax.text(mx + 0.08, my, label, ha="left", va="center",
-                fontproperties=FP, fontsize=10.5, color=lc,
-                fontweight="bold",
-                bbox=dict(fc="white", ec="none", pad=1))
+def label(x, y, w, h, text, color=YES_COL):
+    """YES/NO ラベル用テキストボックス"""
+    sid = next_id()
+    paras = _text_paras([text], sz=900, bold=True, color=color)
+    inner = f"""<xdr:sp macro="" textlink="">
+  <xdr:nvSpPr>
+    <xdr:cNvPr id="{sid}" name="Lbl{sid}"/>
+    <xdr:cNvSpPr txBox="1"><a:spLocks noGrp="1"/></xdr:cNvSpPr>
+  </xdr:nvSpPr>
+  <xdr:spPr>
+    <a:xfrm><a:off x="0" y="0"/><a:ext cx="{w}" cy="{h}"/></a:xfrm>
+    <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+    <a:noFill/>
+    <a:ln><a:noFill/></a:ln>
+  </xdr:spPr>
+  <xdr:txBody>
+    <a:bodyPr wrap="square" anchor="ctr"><a:normAutofit/></a:bodyPr>
+    <a:lstStyle/>
+    {paras}
+  </xdr:txBody>
+</xdr:sp>"""
+    return _anchor(x, y, w, h, inner)
 
 
-# ── メイン ──────────────────────────────────────
-def main():
-    fig, ax = plt.subplots(figsize=(14, 11))
-    ax.set_xlim(0, 14)
-    ax.set_ylim(-0.6, 11)
-    ax.axis("off")
-    fig.suptitle("LPN分割 誤り対応フロー", fontproperties=FP, fontsize=15,
-                  fontweight="bold", y=0.97)
+def separator(y):
+    """シナリオ間の区切り横線"""
+    sid = next_id()
+    inner = f"""<xdr:cxnSp macro="">
+  <xdr:nvCxnSpPr>
+    <xdr:cNvPr id="{sid}" name="Sep{sid}"/>
+    <xdr:cNvCxnSpPr/>
+  </xdr:nvCxnSpPr>
+  <xdr:spPr>
+    <a:xfrm><a:off x="0" y="0"/><a:ext cx="{e(13)}" cy="{9525}"/></a:xfrm>
+    <a:prstGeom prst="straightConnector1"><a:avLst/></a:prstGeom>
+    <a:ln w="9525" cmpd="sng">
+      <a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill>
+      <a:prstDash val="dash"/>
+    </a:ln>
+  </xdr:spPr>
+</xdr:cxnSp>"""
+    return _anchor(e(0.3), y, e(13), 9525, inner)
 
-    # ════════════════════════════════════════
-    # ① LPN分割を忘れて即出荷
-    # ════════════════════════════════════════
-    s1  = oval(ax,  1.1, 10.2, 0.35, 0.28, "開始", fsize=10)
-    c1  = case_box(ax, 1.7, 9.5, 1.3, 0.38,
-                   "①LPN分割を忘れて\n即出荷してしまった", fsize=9.5)
-    d1  = diamond(ax, 4.5, 9.5, 1.5, 0.45,
-                  "即出荷後に\nLPN分割したか？", fsize=10)
-    act_olpn = rect(ax, 8.5, 10.2, 1.6, 0.38, "OLPNを統合する", fc=C_ACT)
-    e1  = oval(ax, 11.0, 10.2, 0.35, 0.28, "終了", fsize=10)
 
-    d2  = diamond(ax, 6.8, 8.5, 1.4, 0.45,
-                  "ワンレックか？\n複数レックか？", fsize=10)
-    act_w1 = rect(ax, 10.2, 9.2, 1.7, 0.38, "国内梱包\n（ワンレック）", fc=C_ACT)
-    e_w1   = oval(ax, 12.8, 9.2, 0.35, 0.28, "終了", fsize=10)
-    act_w2 = rect(ax, 10.2, 7.9, 1.7, 0.50,
-                  "国内梱包（複数レック）\n＋イレギュラー置場へ", fc=C_ACT, fsize=9.5)
-    e_w2   = oval(ax, 12.8, 7.9, 0.35, 0.28, "終了", fsize=10)
+# ──────────────────────────────────────────────────────────────────────
+# フローチャート定義
+# ──────────────────────────────────────────────────────────────────────
+def build_drawing():
+    parts = []
 
-    arrow(ax, edge_pt(s1,"bottom"), edge_pt(c1,"top"))
-    arrow(ax, edge_pt(c1,"right"),  edge_pt(d1,"left"))
-    arrow(ax, edge_pt(d1,"top"),    edge_pt(act_olpn,"left"),
-          label="YES", lc=C_YES, via=(4.5, 10.2))
-    arrow(ax, edge_pt(act_olpn,"right"), edge_pt(e1,"left"))
+    # ── ショートカット ──────────────────────────────────────────────
+    def S(x, y, w, h, txt, **kw):   return shape(e(x),e(y),e(w),e(h),txt,**kw)
+    def C(x1,y1,x2,y2):             return connector(e(x1),e(y1),e(x2),e(y2))
+    def L(x,y,w,h,txt,col=YES_COL): return label(e(x),e(y),e(w),e(h),txt,col)
+    def SEP(y):                      return separator(e(y))
 
-    arrow(ax, edge_pt(d1,"right"),  edge_pt(d2,"left"),  label="NO",  lc=C_NO)
-    arrow(ax, edge_pt(d2,"top"),    edge_pt(act_w1,"left"),
-          label="ワンレック", lc=C_YES, via=(6.8, 9.2))
-    arrow(ax, edge_pt(act_w1,"right"), edge_pt(e_w1,"left"))
-    arrow(ax, edge_pt(d2,"bottom"), edge_pt(act_w2,"left"),
-          label="複数レック", lc=C_NO, via=(6.8, 7.9))
-    arrow(ax, edge_pt(act_w2,"right"), edge_pt(e_w2,"left"))
+    # ════════════════════════════════════════════════════════════════
+    # ① LPN分割を忘れて即出荷してしまった
+    # ════════════════════════════════════════════════════════════════
+    # 開始①（角丸四角・楕円□）
+    parts.append(S(0.3, 0.2,  3.0, 0.65,
+                   "開始①", prst="roundRect", fill=START_FILL, adj=50000, font_sz=1000, bold=True))
+    # ↓
+    parts.append(C(1.8, 0.85, 1.8, 1.2))
+    # 発生事象ボックス（点線）
+    parts.append(S(0.3, 1.2,  3.0, 1.1,
+                   "①LPN分割を忘れて\n即出荷してしまった",
+                   prst="roundRect", fill=CASE_FILL, dashed=True, font_sz=950))
+    # → Decision1
+    parts.append(C(3.3, 1.75, 4.3, 1.75))
 
-    # ════════════════════════════════════════
-    # ② LPN分割で数量を誤った → OLPN統合
-    # ════════════════════════════════════════
-    s2     = oval(ax, 1.1, 7.0, 0.35, 0.28, "開始", fsize=10)
-    c2     = case_box(ax, 1.7, 7.0, 1.3, 0.38,
-                      "②LPN分割で\n数量を誤った", fsize=9.5)
-    act2   = rect(ax, 5.5, 7.0, 1.7, 0.38, "OLPNを統合する", fc=C_ACT)
-    e2     = oval(ax, 8.2, 7.0, 0.35, 0.28, "終了", fsize=10)
+    # Decision1 ◇（即出荷後にLPN分割したか？）
+    parts.append(S(4.3, 1.1,  3.6, 1.3,
+                   "即出荷後に\nLPN分割したか？",
+                   prst="diamond", fill=DEC_FILL, font_sz=950))
+    # YES→ 右
+    parts.append(C(7.9, 1.75, 9.0, 1.75))
+    parts.append(L(7.95, 1.45, 0.8, 0.4, "YES"))
+    # OLPNを統合する □
+    parts.append(S(9.0, 1.3,  3.5, 0.9,
+                   "OLPNを統合する",
+                   prst="rect", fill=ACT_FILL, font_sz=1000))
 
-    arrow(ax, edge_pt(s2,"bottom"), edge_pt(c2,"top"))
-    arrow(ax, edge_pt(c2,"right"),  edge_pt(act2,"left"))
-    arrow(ax, edge_pt(act2,"right"),edge_pt(e2,"left"))
+    # NO↓
+    parts.append(C(6.1, 2.4, 6.1, 3.1))
+    parts.append(L(6.2, 2.6, 0.7, 0.35, "NO", col=NO_COL))
 
-    # ════════════════════════════════════════
+    # Decision2 ◇（ワンレックか？）
+    parts.append(S(4.3, 3.1,  3.6, 1.3,
+                   "対象は\nワンレックか？",
+                   prst="diamond", fill=DEC_FILL, font_sz=950))
+    # YES→ 右
+    parts.append(C(7.9, 3.75, 9.0, 3.75))
+    parts.append(L(7.95, 3.45, 1.0, 0.4, "ワンレック"))
+    # 国内梱包（ワンレック）
+    parts.append(S(9.0, 3.3,  3.5, 0.9,
+                   "国内梱包\n（ワンレック）",
+                   prst="rect", fill=ACT_FILL, font_sz=1000))
+
+    # NO↓
+    parts.append(C(6.1, 4.4, 6.1, 5.1))
+    parts.append(L(6.2, 4.55, 1.1, 0.35, "複数レック", col=NO_COL))
+    # 国内梱包（複数レック）
+    parts.append(S(4.3, 5.1,  3.6, 1.1,
+                   "国内梱包（複数レック）\n＋イレギュラー置場へ",
+                   prst="rect", fill=ACT_FILL, font_sz=950))
+
+    # ════════════════════════════════════════════════════════════════
+    # ② LPN分割で数量を誤った
+    # ════════════════════════════════════════════════════════════════
+    parts.append(SEP(7.0))
+    parts.append(S(0.3, 7.2,  3.0, 0.65,
+                   "開始②", prst="roundRect", fill=START_FILL, adj=50000, font_sz=1000, bold=True))
+    parts.append(C(1.8, 7.85, 1.8, 8.2))
+    parts.append(S(0.3, 8.2,  3.0, 0.9,
+                   "②LPN分割で\n数量を誤った",
+                   prst="roundRect", fill=CASE_FILL, dashed=True, font_sz=950))
+    parts.append(C(3.3, 8.65, 4.5, 8.65))
+    parts.append(S(4.5, 8.2,  3.5, 0.9,
+                   "OLPNを統合する",
+                   prst="rect", fill=ACT_FILL, font_sz=1000))
+
+    # ════════════════════════════════════════════════════════════════
     # ③ LPN分割を過剰に行った
-    # ════════════════════════════════════════
-    s3  = oval(ax, 1.1, 5.4, 0.35, 0.28, "開始", fsize=10)
-    c3  = case_box(ax, 1.7, 5.4, 1.3, 0.38,
-                   "③LPN分割を\n過剰に行った", fsize=9.5)
-    act3= rect(ax, 5.5, 5.4, 1.7, 0.38, "分割ラベルを\n使用する", fc=C_ACT)
-    e3  = oval(ax, 8.2, 5.4, 0.35, 0.28, "終了", fsize=10)
+    # ════════════════════════════════════════════════════════════════
+    parts.append(SEP(10.0))
+    parts.append(S(0.3, 10.2, 3.0, 0.65,
+                   "開始③", prst="roundRect", fill=START_FILL, adj=50000, font_sz=1000, bold=True))
+    parts.append(C(1.8, 10.85, 1.8, 11.2))
+    parts.append(S(0.3, 11.2, 3.0, 0.9,
+                   "③LPN分割を\n過剰に行った",
+                   prst="roundRect", fill=CASE_FILL, dashed=True, font_sz=950))
+    parts.append(C(3.3, 11.65, 4.5, 11.65))
+    parts.append(S(4.5, 11.2, 3.5, 0.9,
+                   "分割ラベルを使用する",
+                   prst="rect", fill=ACT_FILL, font_sz=1000))
 
-    arrow(ax, edge_pt(s3,"bottom"), edge_pt(c3,"top"))
-    arrow(ax, edge_pt(c3,"right"),  edge_pt(act3,"left"))
-    arrow(ax, edge_pt(act3,"right"),edge_pt(e3,"left"))
+    # ════════════════════════════════════════════════════════════════
+    # ④ 複数部材のLPN分割を途中で中断した
+    # ════════════════════════════════════════════════════════════════
+    parts.append(SEP(13.0))
+    parts.append(S(0.3, 13.2, 3.0, 0.65,
+                   "開始④", prst="roundRect", fill=START_FILL, adj=50000, font_sz=1000, bold=True))
+    parts.append(C(1.8, 13.85, 1.8, 14.2))
+    parts.append(S(0.3, 14.2, 3.0, 1.0,
+                   "④複数部材のLPN分割を\n途中で中断した",
+                   prst="roundRect", fill=CASE_FILL, dashed=True, font_sz=950))
+    parts.append(C(3.3, 14.7, 4.5, 14.7))
+    parts.append(S(4.5, 14.2, 3.5, 0.9,
+                   "親部材集約を実施する",
+                   prst="rect", fill=ACT_FILL, font_sz=1000))
 
-    # ════════════════════════════════════════
-    # ④ 複数部材LPN分割を中断した
-    # ════════════════════════════════════════
-    s4  = oval(ax, 1.1, 3.8, 0.35, 0.28, "開始", fsize=10)
-    c4  = case_box(ax, 1.7, 3.8, 1.3, 0.50,
-                   "④複数部材のLPN分割を\n途中で中断した", fsize=9.0)
-    act4= rect(ax, 5.5, 3.8, 1.7, 0.38, "親部材集約を\n実施する", fc=C_ACT)
-    e4  = oval(ax, 8.2, 3.8, 0.35, 0.28, "終了", fsize=10)
+    # ════════════════════════════════════════════════════════════════
+    # ⑤ プリンタを設定しないままLPN分割した
+    # ════════════════════════════════════════════════════════════════
+    parts.append(SEP(16.0))
+    parts.append(S(0.3, 16.2, 3.0, 0.65,
+                   "開始⑤", prst="roundRect", fill=START_FILL, adj=50000, font_sz=1000, bold=True))
+    parts.append(C(1.8, 16.85, 1.8, 17.2))
+    parts.append(S(0.3, 17.2, 3.0, 1.0,
+                   "⑤プリンタを設定しない\nままLPN分割した",
+                   prst="roundRect", fill=CASE_FILL, dashed=True, font_sz=950))
+    parts.append(C(3.3, 17.7, 4.5, 17.7))
+    parts.append(S(4.5, 17.2, 3.5, 0.9,
+                   "MAラベルを再印刷する",
+                   prst="rect", fill=ACT_FILL, font_sz=1000))
 
-    arrow(ax, edge_pt(s4,"bottom"), edge_pt(c4,"top"))
-    arrow(ax, edge_pt(c4,"right"),  edge_pt(act4,"left"))
-    arrow(ax, edge_pt(act4,"right"),edge_pt(e4,"left"))
+    NS = (
+        'xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" '
+        'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+    )
+    return (
+        f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        f'<xdr:wsDr {NS}>\n'
+        + "\n".join(parts)
+        + "\n</xdr:wsDr>"
+    )
 
-    # ════════════════════════════════════════
-    # ⑤ プリンタ未設定のままLPN分割
-    # ════════════════════════════════════════
-    s5  = oval(ax, 1.1, 2.2, 0.35, 0.28, "開始", fsize=10)
-    c5  = case_box(ax, 1.7, 2.2, 1.3, 0.50,
-                   "⑤プリンタを設定しない\nままLPN分割した", fsize=9.0)
-    act5= rect(ax, 5.5, 2.2, 1.7, 0.38, "MAラベルを\n再印刷する", fc=C_ACT)
-    e5  = oval(ax, 8.2, 2.2, 0.35, 0.28, "終了", fsize=10)
 
-    arrow(ax, edge_pt(s5,"bottom"), edge_pt(c5,"top"))
-    arrow(ax, edge_pt(c5,"right"),  edge_pt(act5,"left"))
-    arrow(ax, edge_pt(act5,"right"),edge_pt(e5,"left"))
+# ──────────────────────────────────────────────────────────────────────
+# xlsx パッチ（openpyxl で保存後、ZIP に描画 XML を注入）
+# ──────────────────────────────────────────────────────────────────────
+SHEET_REL_ID = "rId10"
+DRAWING_PATH = "xl/drawings/drawing1.xml"
+DRAWING_PART_NAME = "/xl/drawings/drawing1.xml"
+CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.drawing+xml'
+REL_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing"
 
-    # ── 凡例 ────────────────────────────────
-    lx, ly = 0.3, 0.8
-    oval(ax,  lx+0.4,  ly, 0.28, 0.22, "開始/終了", fsize=9)
-    rect(ax,  lx+2.2,  ly, 0.7,  0.22, "処理 □", fsize=9, fc=C_ACT)
-    diamond(ax,lx+4.0, ly, 0.8,  0.30, "分岐 ◇", fsize=9, fc=C_DEC)
-    case_box(ax,lx+6.0,ly, 0.8,  0.22, "発生事象", fsize=9, fc=C_CASE)
 
-    ax.axhline(1.35, color="#aaaaaa", linewidth=0.8, linestyle="--")
+def patch_xlsx(wb, drawing_xml: str, output_path: str):
+    # 1. openpyxl で基本 xlsx をバッファに保存
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
 
-    plt.tight_layout(rect=[0, 0.02, 1, 0.97])
-    fig.savefig(PNG_FILE, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-    print(f"作成完了: {PNG_FILE}")
+    # 2. ZIP を読み込んで修正
+    out_buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "r") as zin, zipfile.ZipFile(out_buf, "w", zipfile.ZIP_DEFLATED) as zout:
+        names = zin.namelist()
+        for name in names:
+            data = zin.read(name)
 
-    # ── Excelにも貼付 ───────────────────────
-    from openpyxl import Workbook
-    from openpyxl.drawing.image import Image as XLImage
+            # [Content_Types].xml に描画の ContentType を追加
+            if name == "[Content_Types].xml":
+                text = data.decode("utf-8")
+                insert = f'<Override PartName="{DRAWING_PART_NAME}" ContentType="{CONTENT_TYPE}"/>'
+                text = text.replace("</Types>", insert + "</Types>")
+                data = text.encode("utf-8")
+
+            # ワークシート XML に <drawing> 参照を追加
+            elif name == "xl/worksheets/sheet1.xml":
+                text = data.decode("utf-8")
+                drawing_ref = f'<drawing r:id="{SHEET_REL_ID}"/>'
+                if drawing_ref not in text:
+                    text = text.replace("</worksheet>", drawing_ref + "</worksheet>")
+                data = text.encode("utf-8")
+
+            # ワークシートのリレーション追加 or 作成
+            elif name == "xl/worksheets/_rels/sheet1.xml.rels":
+                text = data.decode("utf-8")
+                rel = (f'<Relationship Id="{SHEET_REL_ID}" Type="{REL_TYPE}" '
+                       f'Target="../drawings/drawing1.xml"/>')
+                text = text.replace("</Relationships>", rel + "</Relationships>")
+                data = text.encode("utf-8")
+
+            zout.writestr(name, data)
+
+        # ワークシートの _rels が存在しない場合は作成
+        rels_path = "xl/worksheets/_rels/sheet1.xml.rels"
+        if rels_path not in names:
+            rel_content = (
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                f'<Relationship Id="{SHEET_REL_ID}" Type="{REL_TYPE}" '
+                f'Target="../drawings/drawing1.xml"/>'
+                '</Relationships>'
+            )
+            zout.writestr(rels_path, rel_content.encode("utf-8"))
+
+        # 3. 描画 XML を追加
+        zout.writestr(DRAWING_PATH, drawing_xml.encode("utf-8"))
+
+    # 4. ファイルに書き出し
+    out_buf.seek(0)
+    with open(output_path, "wb") as f:
+        f.write(out_buf.read())
+
+
+def main():
     wb = Workbook()
     ws = wb.active
     ws.title = "LPN分割誤り対応フロー"
-    img = XLImage(PNG_FILE)
-    scale = 1400 / img.width
-    img.width  = int(img.width  * scale)
-    img.height = int(img.height * scale)
-    ws.add_image(img, "A1")
-    wb.save(XLSX_FILE)
-    print(f"作成完了: {XLSX_FILE}")
+    ws["A1"] = "LPN分割 誤り対応フロー図"
+    ws["A1"].font = __import__("openpyxl").styles.Font(
+        name="HGP創英角ｺﾞｼｯｸUB", size=16, bold=True)
+    ws.row_dimensions[1].height = 20
+
+    drawing_xml = build_drawing()
+    patch_xlsx(wb, drawing_xml, OUTPUT)
+    print(f"作成完了: {OUTPUT}")
+    print("図形はすべて Excel 上でクリックして直接編集できます。")
 
 
 if __name__ == "__main__":
