@@ -109,53 +109,56 @@ def main():
     run.font.size = Pt(20)
     run.font.bold = True
 
-    # ── 発生事象（左列、縦に5段）──────────────────────
-    ENTRY_X, ENTRY_W, ENTRY_H = 0.4, 2.7, 0.9
-    entry_y = [0.9, 2.15, 3.85, 5.05, 6.25]
-
-    e1 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, ENTRY_X, entry_y[0], ENTRY_W, ENTRY_H,
-                 "①LPN分割を忘れて\n即出荷してしまった", COLOR_ENTRY)
-    e2 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, ENTRY_X, entry_y[1], ENTRY_W, ENTRY_H,
-                 "②LPN分割で\n数量を誤った", COLOR_ENTRY)
-    e3 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, ENTRY_X, entry_y[2], ENTRY_W, ENTRY_H,
-                 "③LPN分割を\n過剰に行った", COLOR_ENTRY)
-    e4 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, ENTRY_X, entry_y[3], ENTRY_W, ENTRY_H,
-                 "④複数部材の分割を\n途中で中断した", COLOR_ENTRY)
-    e5 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, ENTRY_X, entry_y[4], ENTRY_W, ENTRY_H,
-                 "⑤プリンタの設定を\nしないままLPN分割した", COLOR_ENTRY)
-
-    # ── 判定1：即出荷後にLPN分割したか ──────────────────
-    d1 = add_box(slide, MSO_SHAPE.DIAMOND, 3.7, 0.75, 2.0, 1.2,
+    # レイアウト規則:
+    #   ・本流（まだ条件確認が続く経路）は同じ行を左→右に直進させる
+    #   ・確定した対応（YES/結果）は必ず1行下に分岐させる（向きを統一）
+    #   ・各ケースは専用の行（レーン）に置き、本流と交差させない
+    # ── 行0：本流の判定チェーン ────────────────────────
+    e1 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 0.3, 0.7, 2.3, 1.0,
+                 "①LPN分割を忘れて\n即出荷してしまった", COLOR_ENTRY, font_size=13)
+    d1 = add_box(slide, MSO_SHAPE.DIAMOND, 3.3, 0.6, 1.7, 1.2,
                  "即出荷後に\nLPN分割したか？", COLOR_DECISION, font_size=13)
-
-    # ── 対応①：oLPN統合 ───────────────────────────────
-    a1 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 9.6, 0.5, 2.6, 0.85,
-                 "oLPN統合", COLOR_ACTION, font_size=14, bold=True)
-
-    # ── 判定2：1RECか ────────────────────────────────
-    d2 = add_box(slide, MSO_SHAPE.DIAMOND, 6.3, 2.0, 1.8, 1.2,
+    d2 = add_box(slide, MSO_SHAPE.DIAMOND, 7.3, 0.6, 1.6, 1.2,
                  "1RECか？", COLOR_DECISION, font_size=14)
 
-    a2 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 9.6, 1.75, 2.6, 0.85,
-                 "国内梱包_1REC", COLOR_ACTION, font_size=14, bold=True)
-    a3 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 9.6, 3.0, 2.9, 1.0,
-                 "国内梱包_複数REC\n＋イレギュラー置き場へ", COLOR_ACTION, font_size=13, bold=True)
+    # ── 行1：①②の対応（行0の直下に整列）────────────────
+    a1 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 3.3, 2.2, 1.7, 0.8,
+                 "oLPN統合", COLOR_ACTION, font_size=14, bold=True)
+    e2 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 0.3, 2.2, 2.3, 0.8,
+                 "②LPN分割で\n数量を誤った", COLOR_ENTRY, font_size=13)
+    a2 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 6.2, 2.2, 1.8, 0.8,
+                 "国内梱包_1REC", COLOR_ACTION, font_size=13, bold=True)
+    a3 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 8.5, 2.2, 2.6, 0.8,
+                 "国内梱包_複数REC\n＋イレギュラー置き場へ", COLOR_ACTION, font_size=12, bold=True)
 
-    a4 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 4.0, 3.85, 3.2, 0.9,
+    # ── 行2〜4：③④⑤（行0/1とは独立した単純レーン）──────
+    e3 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 0.3, 3.5, 2.3, 0.9,
+                 "③LPN分割を\n過剰に行った", COLOR_ENTRY, font_size=13)
+    a4 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 3.3, 3.5, 2.3, 0.9,
                  "分割ラベルを使用する", COLOR_ACTION, font_size=14, bold=True)
-    a5 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 4.0, 5.05, 3.2, 0.9,
+
+    e4 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 0.3, 4.7, 2.3, 0.9,
+                 "④複数部材の分割を\n途中で中断した", COLOR_ENTRY, font_size=13)
+    a5 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 3.3, 4.7, 2.3, 0.9,
                  "親部材集約", COLOR_ACTION, font_size=14, bold=True)
-    a6 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 4.0, 6.25, 3.2, 0.9,
+
+    e5 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 0.3, 5.9, 2.3, 0.9,
+                 "⑤プリンタの設定を\nしないままLPN分割した", COLOR_ENTRY, font_size=13)
+    a6 = add_box(slide, MSO_SHAPE.ROUNDED_RECTANGLE, 3.3, 5.9, 2.6, 0.9,
                  "MAからラベル再印刷", COLOR_ACTION, font_size=14, bold=True)
 
     # ── 接続線 ───────────────────────────────────────
+    # 本流（行0）：YESは1行下へ、NOは同じ行を直進
     connect(slide, e1, d1, "r", "l")
-    connect(slide, d1, a1, "t", "l", label="YES", label_color=COLOR_YES)
-    connect(slide, d1, d2, "b", "t", label="NO", label_color=COLOR_NO)
-    connect(slide, d2, a2, "t", "l", label="YES", label_color=COLOR_YES)
-    connect(slide, d2, a3, "b", "l", label="NO", label_color=COLOR_NO)
+    connect(slide, d1, a1, "b", "t", label="YES", label_color=COLOR_YES)
+    connect(slide, d1, d2, "r", "l", label="NO", label_color=COLOR_NO)
+    connect(slide, d2, a2, "b", "t", label="YES", label_color=COLOR_YES)
+    connect(slide, d2, a3, "b", "t", label="NO", label_color=COLOR_NO)
 
+    # 行1内（②はそのまま同じ行でoLPN統合へ）
     connect(slide, e2, a1, "r", "l")
+
+    # 行2〜4（各ケース単独・本流と非交差）
     connect(slide, e3, a4, "r", "l")
     connect(slide, e4, a5, "r", "l")
     connect(slide, e5, a6, "r", "l")
